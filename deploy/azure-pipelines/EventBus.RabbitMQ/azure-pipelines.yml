@@ -55,5 +55,5 @@ steps:
     nuGetFeedType: 'external'
     versioningScheme: 'byBuildNumber'
     includeNuGetOrg: true
-    publishFeedCredentials: 'NugetConnection'
+    publishFeedCredentials: 'NugetCredentials'
     allowPackageConflicts: true
