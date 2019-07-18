@@ -6,6 +6,9 @@
     <Company>Finaps</Company>
     <VersionPrefix>0.1.0</VersionPrefix>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Andrew Hagens</Authors>
+    <Description>RabbitMQ Implementation of a Generic EventBus</Description>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
