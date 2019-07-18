@@ -11,6 +11,7 @@ trigger:
   paths:
     include:
     - EventBus.RabbitMQ/*
+    - deploy/*
 
 pool:
   vmImage: 'ubuntu-16.04'
