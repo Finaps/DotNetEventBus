@@ -1,7 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+     <TargetFramework>netcoreapp2.2</TargetFramework>
+    <PackageId>Finaps.EventBus.Core</PackageId>
+    <Company>Finaps</Company>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Andrew Hagens</Authors>
+    <Description>Generic EventBus</Description>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
