@@ -24,7 +24,6 @@ steps:
   displayName: "dotnet pack"
   inputs:
     command: 'pack'
-    arguments: '--configuration $(buildConfiguration)'
     versioningScheme: 'off'
 
 # The last task is a nuget command, nuget push

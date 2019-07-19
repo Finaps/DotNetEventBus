@@ -4,7 +4,6 @@
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <PackageId>Finaps.EventBus.RabbitMQ</PackageId>
     <Company>Finaps</Company>
-    <VersionPrefix>0.1.0</VersionPrefix>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Andrew Hagens</Authors>
     <Description>RabbitMQ Implementation of a Generic EventBus</Description>
