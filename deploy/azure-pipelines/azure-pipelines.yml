@@ -8,11 +8,6 @@ trigger:
   branches: 
     include:
     - master
-  paths:
-    include:
-    - EventBus.RabbitMQ/*
-    - deploy/*
-
 pool:
   vmImage: 'ubuntu-16.04'
 
@@ -23,15 +18,6 @@ variables:
 
 #The build has 3 seperate tasks run under 1 step
 steps:
-
-# The first task is the dotnet command build, pointing to our csproj file
-- task: DotNetCoreCLI@2
-  displayName: 'dotnet build'
-  inputs:
-    command: 'build'
-    arguments: '--configuration $(buildConfiguration)'
-    projects: 'EventBus.RabbitMQ/EventBus.RabbitMQ.csproj'
-
 # The second task is dotnet pack command again pointing to the csproj file
 # The nobuild means the project will not be compiled before running pack, because its already built in above step
 - task: DotNetCoreCLI@2
@@ -39,8 +25,6 @@ steps:
   inputs:
     command: 'pack'
     arguments: '--configuration $(buildConfiguration)'
-    packagesToPack: 'EventBus.RabbitMQ/EventBus.RabbitMQ.csproj'
-    nobuild: true
     versioningScheme: 'off'
 
 # The last task is a nuget command, nuget push
