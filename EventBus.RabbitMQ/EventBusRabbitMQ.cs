@@ -2,7 +2,6 @@ using System;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using Autofac;
 using EventBus.Core.Extensions;
 using Finaps.EventBus.Core;
 using Finaps.EventBus.Core.Abstractions;
@@ -20,27 +19,24 @@ namespace Finaps.EventBus.RabbitMQ
 {
   public class EventBusRabbitMQ : IEventBus, IDisposable
   {
-    const string BROKER_NAME = "eshop_event_bus";
-
     private readonly IRabbitMQPersistentConnection _persistentConnection;
     private readonly ILogger<EventBusRabbitMQ> _logger;
     private readonly IEventBusSubscriptionsManager _subsManager;
-    private readonly ILifetimeScope _autofac;
-    private readonly string AUTOFAC_SCOPE_NAME = "eshop_event_bus";
     private readonly int _retryCount;
 
     private IModel _consumerChannel;
     private string _queueName;
+    private string _exchangeName;
 
     public EventBusRabbitMQ(IRabbitMQPersistentConnection persistentConnection, ILogger<EventBusRabbitMQ> logger,
-        ILifetimeScope autofac, IEventBusSubscriptionsManager subsManager, string queueName = null, int retryCount = 5)
+        IEventBusSubscriptionsManager subsManager, string exchangeName, string queueName = null, int retryCount = 5)
     {
       _persistentConnection = persistentConnection ?? throw new ArgumentNullException(nameof(persistentConnection));
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
       _subsManager = subsManager ?? new InMemoryEventBusSubscriptionsManager();
+      _exchangeName = exchangeName;
       _queueName = queueName;
       _consumerChannel = CreateConsumerChannel();
-      _autofac = autofac;
       _retryCount = retryCount;
       _subsManager.OnEventRemoved += SubsManager_OnEventRemoved;
     }
@@ -55,7 +51,7 @@ namespace Finaps.EventBus.RabbitMQ
       using (var channel = _persistentConnection.CreateModel())
       {
         channel.QueueUnbind(queue: _queueName,
-            exchange: BROKER_NAME,
+            exchange: _exchangeName,
             routingKey: eventName);
 
         if (_subsManager.IsEmpty)
@@ -89,7 +85,7 @@ namespace Finaps.EventBus.RabbitMQ
 
         _logger.LogTrace("Declaring RabbitMQ exchange to publish event: {EventId}", @event.Id);
 
-        channel.ExchangeDeclare(exchange: BROKER_NAME, type: "direct");
+        channel.ExchangeDeclare(exchange: _exchangeName, type: "direct");
 
         var message = JsonConvert.SerializeObject(@event);
         var body = Encoding.UTF8.GetBytes(message);
@@ -102,7 +98,7 @@ namespace Finaps.EventBus.RabbitMQ
           _logger.LogTrace("Publishing event to RabbitMQ: {EventId}", @event.Id);
 
           channel.BasicPublish(
-                      exchange: BROKER_NAME,
+                      exchange: _exchangeName,
                       routingKey: eventName,
                       mandatory: true,
                       basicProperties: properties,
@@ -111,17 +107,7 @@ namespace Finaps.EventBus.RabbitMQ
       }
     }
 
-    public void SubscribeDynamic<TH>(string eventName)
-        where TH : IDynamicIntegrationEventHandler
-    {
-      _logger.LogInformation("Subscribing to dynamic event {EventName} with {EventHandler}", eventName, typeof(TH).GetGenericTypeName());
-
-      DoInternalSubscription(eventName);
-      _subsManager.AddDynamicSubscription<TH>(eventName);
-      StartBasicConsume();
-    }
-
-    public void Subscribe<T, TH>()
+    public void Subscribe<T, TH>(TH handler)
         where T : IntegrationEvent
         where TH : IIntegrationEventHandler<T>
     {
@@ -130,7 +116,7 @@ namespace Finaps.EventBus.RabbitMQ
 
       _logger.LogInformation("Subscribing to event {EventName} with {EventHandler}", eventName, typeof(TH).GetGenericTypeName());
 
-      _subsManager.AddSubscription<T, TH>();
+      _subsManager.AddSubscription<T, TH>(handler);
       StartBasicConsume();
     }
 
@@ -147,27 +133,10 @@ namespace Finaps.EventBus.RabbitMQ
         using (var channel = _persistentConnection.CreateModel())
         {
           channel.QueueBind(queue: _queueName,
-                            exchange: BROKER_NAME,
+                            exchange: _exchangeName,
                             routingKey: eventName);
         }
       }
-    }
-
-    public void Unsubscribe<T, TH>()
-        where T : IntegrationEvent
-        where TH : IIntegrationEventHandler<T>
-    {
-      var eventName = _subsManager.GetEventKey<T>();
-
-      _logger.LogInformation("Unsubscribing from event {EventName}", eventName);
-
-      _subsManager.RemoveSubscription<T, TH>();
-    }
-
-    public void UnsubscribeDynamic<TH>(string eventName)
-        where TH : IDynamicIntegrationEventHandler
-    {
-      _subsManager.RemoveDynamicSubscription<TH>(eventName);
     }
 
     public void Dispose()
@@ -237,7 +206,7 @@ namespace Finaps.EventBus.RabbitMQ
 
       var channel = _persistentConnection.CreateModel();
 
-      channel.ExchangeDeclare(exchange: BROKER_NAME,
+      channel.ExchangeDeclare(exchange: _exchangeName,
                               type: "direct");
 
       channel.QueueDeclare(queue: _queueName,
@@ -264,29 +233,15 @@ namespace Finaps.EventBus.RabbitMQ
 
       if (_subsManager.HasSubscriptionsForEvent(eventName))
       {
-        using (var scope = _autofac.BeginLifetimeScope(AUTOFAC_SCOPE_NAME))
+        var handlers = _subsManager.GetHandlersForEvent(eventName);
+        foreach (var handler in handlers)
         {
-          var subscriptions = _subsManager.GetHandlersForEvent(eventName);
-          foreach (var subscription in subscriptions)
-          {
-            if (subscription.IsDynamic)
-            {
-              var handler = scope.ResolveOptional(subscription.HandlerType) as IDynamicIntegrationEventHandler;
-              if (handler == null) continue;
-              dynamic eventData = JObject.Parse(message);
-              await handler.Handle(eventData);
-            }
-            else
-            {
-              var handler = scope.ResolveOptional(subscription.HandlerType);
-              if (handler == null) continue;
-              var eventType = _subsManager.GetEventTypeByName(eventName);
-              var integrationEvent = JsonConvert.DeserializeObject(message, eventType);
-              var concreteType = typeof(IIntegrationEventHandler<>).MakeGenericType(eventType);
-              await (Task)concreteType.GetMethod("Handle").Invoke(handler, new object[] { integrationEvent });
-            }
-          }
+          var eventType = _subsManager.GetEventTypeByName(eventName);
+          var integrationEvent = JsonConvert.DeserializeObject(message, eventType);
+          var concreteType = typeof(IIntegrationEventHandler<>).MakeGenericType(eventType);
+          await (Task)concreteType.GetMethod("Handle").Invoke(handler, new object[] { integrationEvent });
         }
+
       }
       else
       {

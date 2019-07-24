@@ -5,13 +5,12 @@
     <PackageId>Finaps.EventBus.RabbitMQ</PackageId>
     <Company>Finaps</Company>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>Andrew Hagens</Authors>
+    <Authors>Andrew Hagens;Thomas Poiesz</Authors>
     <Description>RabbitMQ Implementation of a Generic EventBus</Description>
     <IsPackable>true</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="4.9.2" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
     <PackageReference Include="Polly" Version="7.1.0" />
