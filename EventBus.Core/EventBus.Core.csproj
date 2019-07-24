@@ -5,12 +5,13 @@
     <PackageId>Finaps.EventBus.Core</PackageId>
     <Company>Finaps</Company>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>Andrew Hagens</Authors>
+    <Authors>Andrew Hagens;Thomas Poiesz</Authors>
     <Description>Generic EventBus</Description>
     <IsPackable>true</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
   </ItemGroup>
 
