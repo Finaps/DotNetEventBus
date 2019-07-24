@@ -5,9 +5,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Finaps.EventBus.RabbitMQ.DependencyInjection
 {
-  public class Configuration
+  public static class Configuration
   {
-    public void AddEventHandler<T, TH>(IApplicationBuilder app)
+    public static void AddEventHandler<T, TH>(this IApplicationBuilder app)
         where T : IntegrationEvent
         where TH : IIntegrationEventHandler<T>
     {

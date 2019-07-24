@@ -1,0 +1,18 @@
+{
+  "folders": [{
+      "name": "EventBus.Core",
+      "path": "EventBus.Core"
+    },
+    {
+      "name": "EventBus.RabbitMQ",
+      "path": "EventBus.RabbitMQ"
+    },
+    {
+      "name": "EventBus.SampleProject",
+      "path": "EventBus.SampleProject"
+    },
+    {
+      "path": ".",
+    }
+  ]
+}
