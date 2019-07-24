@@ -85,7 +85,7 @@ namespace Finaps.EventBus.RabbitMQ
 
         _logger.LogTrace("Declaring RabbitMQ exchange to publish event: {EventId}", @event.Id);
 
-        channel.ExchangeDeclare(exchange: _exchangeName, type: "direct");
+        channel.ExchangeDeclare(exchange: _exchangeName, type: "direct", true);
 
         var message = JsonConvert.SerializeObject(@event);
         var body = Encoding.UTF8.GetBytes(message);
@@ -207,7 +207,8 @@ namespace Finaps.EventBus.RabbitMQ
       var channel = _persistentConnection.CreateModel();
 
       channel.ExchangeDeclare(exchange: _exchangeName,
-                              type: "direct");
+                              type: "direct",
+                              true);
 
       channel.QueueDeclare(queue: _queueName,
                            durable: true,
