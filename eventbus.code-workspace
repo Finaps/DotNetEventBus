@@ -8,6 +8,10 @@
       "path": "EventBus.RabbitMQ"
     },
     {
+      "name": "EventBus.AzureServiceBus",
+      "path": "EventBus.AzureServiceBus"
+    },
+    {
       "name": "EventBus.SampleProject",
       "path": "EventBus.SampleProject"
     },

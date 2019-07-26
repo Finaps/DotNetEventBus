@@ -3,7 +3,7 @@ using Finaps.EventBus.Core.Events;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Finaps.EventBus.RabbitMQ.DependencyInjection
+namespace Finaps.EventBus.Core.DependencyInjection
 {
   public static class Configuration
   {

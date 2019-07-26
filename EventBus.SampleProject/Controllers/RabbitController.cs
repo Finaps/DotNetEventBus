@@ -28,5 +28,14 @@ namespace EventBus.SampleProject.Controllers
       });
     }
 
+    [HttpPut]
+    public void Put([FromBody] string value)
+    {
+      _eventBus.Publish(new MessagePutEvent()
+      {
+        Message = value
+      });
+    }
+
   }
 }

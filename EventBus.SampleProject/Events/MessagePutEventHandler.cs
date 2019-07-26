@@ -5,19 +5,19 @@ using Microsoft.Extensions.Logging;
 
 namespace EventBus.SampleProject.Events
 {
-  public class MessagePostedEventHandler : IIntegrationEventHandler<MessagePostedEvent>
+  public class MessagePutEventHandler : IIntegrationEventHandler<MessagePutEvent>
   {
     private readonly ILogger _logger;
 
-    public MessagePostedEventHandler(
-      ILogger<MessagePostedEventHandler> logger
+    public MessagePutEventHandler(
+      ILogger<MessagePutEventHandler> logger
     )
     {
       _logger = logger;
     }
-    public async Task Handle(MessagePostedEvent @event)
+    public async Task Handle(MessagePutEvent @event)
     {
-      _logger.LogInformation($"Message posted: {@event.Message}");
+      _logger.LogInformation($"Message put: {@event.Message}");
       await Task.CompletedTask;
     }
   }

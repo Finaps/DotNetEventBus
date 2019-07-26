@@ -2,7 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EventBus.SampleProject.Configuration;
 using EventBus.SampleProject.Events;
+using Finaps.EventBus.AzureServiceBus;
+using Finaps.EventBus.AzureServiceBus.DependencyInjection;
+using Finaps.EventBus.Core.DependencyInjection;
 using Finaps.EventBus.RabbitMQ;
 using Finaps.EventBus.RabbitMQ.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
@@ -30,10 +34,31 @@ namespace EventBus.SampleProject
     {
       services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
       services.AddSingleton<MessagePostedEventHandler>();
-      services.AddRabbitMQ(new RabbitMQOptions()
+      services.AddSingleton<MessagePutEventHandler>();
+      EventBusConfiguration eventBusConfiguration = new EventBusConfiguration();
+      Configuration.GetSection("EventBus").Bind(eventBusConfiguration);
+      if (eventBusConfiguration.UseRabbitMQ)
       {
-        QueueName = "SampleProject"
-      });
+        var rabbitConfig = eventBusConfiguration.RabbitMQConfiguration;
+        services.AddRabbitMQ(new RabbitMQOptions()
+        {
+          HostName = rabbitConfig.Host,
+          UserName = rabbitConfig.UserName,
+          Password = rabbitConfig.Password,
+          VirtualHost = rabbitConfig.VirtualHost,
+          QueueName = rabbitConfig.QueueName,
+          ExchangeName = rabbitConfig.ExchangeName
+        });
+      }
+      else
+      {
+        var azureConfig = eventBusConfiguration.AzureServiceBusConfiguration;
+        services.AddAzureServiceBus(new AzureServiceBusOptions()
+        {
+          ClientName = azureConfig.ClientName,
+          ConnectionString = azureConfig.ConnectionString
+        });
+      }
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -52,6 +77,7 @@ namespace EventBus.SampleProject
       //app.UseHttpsRedirection();
       app.UseMvc();
       app.AddEventHandler<MessagePostedEvent, MessagePostedEventHandler>();
+      app.AddEventHandler<MessagePutEvent, MessagePutEventHandler>();
     }
   }
 }
