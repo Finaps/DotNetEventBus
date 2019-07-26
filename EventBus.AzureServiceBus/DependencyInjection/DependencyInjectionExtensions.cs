@@ -26,6 +26,7 @@ namespace Finaps.EventBus.AzureServiceBus.DependencyInjection
           sp.GetRequiredService<IServiceBusPersisterConnection>(),
           sp.GetRequiredService<ILogger<EventBusServiceBus>>(),
           sp.GetRequiredService<IEventBusSubscriptionsManager>(),
+          sp,
           options.ClientName
           );
       });

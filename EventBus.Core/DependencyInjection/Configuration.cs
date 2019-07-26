@@ -13,7 +13,7 @@ namespace Finaps.EventBus.Core.DependencyInjection
     {
       var eventBus = app.ApplicationServices.GetRequiredService<IEventBus>();
       var handler = app.ApplicationServices.GetRequiredService<TH>();
-      eventBus.Subscribe<T, TH>(handler);
+      eventBus.Subscribe<T, TH>();
     }
   }
 }

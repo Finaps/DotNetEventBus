@@ -32,6 +32,7 @@ namespace Finaps.EventBus.RabbitMQ.DependencyInjection
           sp.GetRequiredService<IRabbitMQPersistentConnection>(),
           sp.GetRequiredService<ILogger<EventBusRabbitMQ>>(),
           sp.GetRequiredService<IEventBusSubscriptionsManager>(),
+          sp,
           options.ExchangeName,
           options.QueueName,
           options.RetryCount

@@ -16,9 +16,10 @@
     private readonly ILogger<EventBusServiceBus> _logger;
     private readonly IEventBusSubscriptionsManager _subsManager;
     private readonly SubscriptionClient _subscriptionClient;
+    private readonly IServiceProvider _serviceProvider;
 
     public EventBusServiceBus(IServiceBusPersisterConnection serviceBusPersisterConnection,
-        ILogger<EventBusServiceBus> logger, IEventBusSubscriptionsManager subsManager, string subscriptionClientName)
+        ILogger<EventBusServiceBus> logger, IEventBusSubscriptionsManager subsManager, IServiceProvider serviceProvider, string subscriptionClientName)
     {
       _serviceBusPersisterConnection = serviceBusPersisterConnection;
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -26,6 +27,8 @@
 
       _subscriptionClient = new SubscriptionClient(serviceBusPersisterConnection.ServiceBusConnectionStringBuilder,
           subscriptionClientName);
+
+      _serviceProvider = serviceProvider;
 
       RemoveDefaultRule();
       RegisterSubscriptionClientMessageHandler();
@@ -51,7 +54,7 @@
           .GetResult();
     }
 
-    public void Subscribe<T, TH>(TH handler)
+    public void Subscribe<T, TH>()
         where T : IntegrationEvent
         where TH : IIntegrationEventHandler<T>
     {
@@ -76,7 +79,7 @@
 
       _logger.LogInformation("Subscribing to event {EventName} with {EventHandler}", eventName, typeof(TH).Name);
 
-      _subsManager.AddSubscription<T, TH>(handler);
+      _subsManager.AddSubscription<T, TH>();
     }
 
     public void Dispose()
@@ -116,9 +119,10 @@
       var processed = false;
       if (_subsManager.HasSubscriptionsForEvent(eventName))
       {
-        var handlers = _subsManager.GetHandlersForEvent(eventName);
-        foreach (var handler in handlers)
+        var handlerTypes = _subsManager.GetHandlersForEvent(eventName);
+        foreach (var type in handlerTypes)
         {
+          var handler = _serviceProvider.GetService(type) as IIntegrationEventHandler;
           var eventType = _subsManager.GetEventTypeByName(eventName);
           var integrationEvent = JsonConvert.DeserializeObject(message, eventType);
           var concreteType = typeof(IIntegrationEventHandler<>).MakeGenericType(eventType);
