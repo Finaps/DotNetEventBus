@@ -16,6 +16,10 @@
       "path": "EventBus.SampleProject"
     },
     {
+      "name": "EventBus.Tests",
+      "path": "EventBus.Tests"
+    },
+    {
       "path": ".",
     }
   ]
