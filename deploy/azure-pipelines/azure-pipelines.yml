@@ -3,11 +3,6 @@
 # Add steps that run tests, create a NuGet package, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
 
-# the build will trigger on any changes to the master branch
-trigger:
-  branches: 
-    include:
-    - master
 pool:
   vmImage: 'ubuntu-16.04'
 
@@ -16,18 +11,25 @@ pool:
 variables:
   buildConfiguration: 'Release'
 
-#The build has 3 seperate tasks run under 1 step
+#The build has 4 seperate tasks run under 1 step
 steps:
 - task: DotNetCoreCLI@2
   displayName: 'dotnet build'
   inputs:
     command: 'build'
     arguments: '--configuration $(buildConfiguration)'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet test'
+  inputs:
+    command: 'test'
+    arguments: '--configuration $(buildConfiguration)'
     
 # The second task is dotnet pack command again pointing to the csproj file
 # The nobuild means the project will not be compiled before running pack, because its already built in above step
 - task: DotNetCoreCLI@2
   displayName: "dotnet pack"
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
   inputs:
     command: 'pack'
     versioningScheme: 'off'
@@ -40,6 +42,7 @@ steps:
 # instead it just ingores the latest package unless the version changes
 - task: NuGetCommand@2
   displayName: 'nuget push'
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
   inputs:
     command: 'push'
     feedsToUse: 'select'
