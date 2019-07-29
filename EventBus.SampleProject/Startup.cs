@@ -55,7 +55,7 @@ namespace EventBus.SampleProject
         var azureConfig = eventBusConfiguration.AzureServiceBusConfiguration;
         services.AddAzureServiceBus(new AzureServiceBusOptions()
         {
-          ClientName = azureConfig.ClientName,
+          SubscriptionName = azureConfig.ClientName,
           ConnectionString = azureConfig.ConnectionString
         });
       }
