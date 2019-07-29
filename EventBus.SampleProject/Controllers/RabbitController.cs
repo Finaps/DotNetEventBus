@@ -18,7 +18,6 @@ namespace EventBus.SampleProject.Controllers
       _eventBus = eventBus;
     }
 
-    // POST api/values
     [HttpPost]
     public void Post([FromBody] string value)
     {
