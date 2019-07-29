@@ -13,8 +13,6 @@ namespace Finaps.EventBus.Core
     private readonly Dictionary<string, List<Type>> _handlers;
     private readonly List<Type> _eventTypes;
 
-    public event EventHandler<string> OnEventRemoved;
-
     public InMemoryEventBusSubscriptionsManager()
     {
       _handlers = new Dictionary<string, List<Type>>();
