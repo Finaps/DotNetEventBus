@@ -33,8 +33,8 @@ namespace EventBus.SampleProject
     public void ConfigureServices(IServiceCollection services)
     {
       services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
-      services.AddSingleton<MessagePostedEventHandler>();
-      services.AddSingleton<MessagePutEventHandler>();
+      services.AddTransient<MessagePostedEventHandler>();
+      services.AddTransient<MessagePutEventHandler>();
       EventBusConfiguration eventBusConfiguration = new EventBusConfiguration();
       Configuration.GetSection("EventBus").Bind(eventBusConfiguration);
       if (eventBusConfiguration.UseRabbitMQ)

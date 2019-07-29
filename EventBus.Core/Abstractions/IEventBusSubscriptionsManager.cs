@@ -10,7 +10,7 @@ namespace Finaps.EventBus.Core
     bool IsEmpty { get; }
     event EventHandler<string> OnEventRemoved;
 
-    void AddSubscription<T, TH>(TH handler)
+    void AddSubscription<T, TH>()
        where T : IntegrationEvent
        where TH : IIntegrationEventHandler<T>;
 
@@ -18,8 +18,8 @@ namespace Finaps.EventBus.Core
     bool HasSubscriptionsForEvent(string eventName);
     Type GetEventTypeByName(string eventName);
     void Clear();
-    IEnumerable<IIntegrationEventHandler> GetHandlersForEvent<T>() where T : IntegrationEvent;
-    IEnumerable<IIntegrationEventHandler> GetHandlersForEvent(string eventName);
+    IEnumerable<Type> GetHandlersForEvent<T>() where T : IntegrationEvent;
+    IEnumerable<Type> GetHandlersForEvent(string eventName);
     string GetEventKey<T>();
   }
 }

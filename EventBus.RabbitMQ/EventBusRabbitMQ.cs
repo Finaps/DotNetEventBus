@@ -22,6 +22,7 @@ namespace Finaps.EventBus.RabbitMQ
     private readonly IRabbitMQPersistentConnection _persistentConnection;
     private readonly ILogger<EventBusRabbitMQ> _logger;
     private readonly IEventBusSubscriptionsManager _subsManager;
+    private readonly IServiceProvider _serviceProvider;
     private readonly int _retryCount;
 
     private IModel _consumerChannel;
@@ -29,11 +30,12 @@ namespace Finaps.EventBus.RabbitMQ
     private string _exchangeName;
 
     public EventBusRabbitMQ(IRabbitMQPersistentConnection persistentConnection, ILogger<EventBusRabbitMQ> logger,
-        IEventBusSubscriptionsManager subsManager, string exchangeName, string queueName = null, int retryCount = 5)
+        IEventBusSubscriptionsManager subsManager, IServiceProvider serviceProvider, string exchangeName, string queueName = null, int retryCount = 5)
     {
       _persistentConnection = persistentConnection ?? throw new ArgumentNullException(nameof(persistentConnection));
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
       _subsManager = subsManager ?? new InMemoryEventBusSubscriptionsManager();
+      _serviceProvider = serviceProvider;
       _exchangeName = exchangeName;
       _queueName = queueName;
       _consumerChannel = CreateConsumerChannel();
@@ -107,7 +109,7 @@ namespace Finaps.EventBus.RabbitMQ
       }
     }
 
-    public void Subscribe<T, TH>(TH handler)
+    public void Subscribe<T, TH>()
         where T : IntegrationEvent
         where TH : IIntegrationEventHandler<T>
     {
@@ -116,7 +118,7 @@ namespace Finaps.EventBus.RabbitMQ
 
       _logger.LogInformation("Subscribing to event {EventName} with {EventHandler}", eventName, typeof(TH).GetGenericTypeName());
 
-      _subsManager.AddSubscription<T, TH>(handler);
+      _subsManager.AddSubscription<T, TH>();
       StartBasicConsume();
     }
 
@@ -234,9 +236,10 @@ namespace Finaps.EventBus.RabbitMQ
 
       if (_subsManager.HasSubscriptionsForEvent(eventName))
       {
-        var handlers = _subsManager.GetHandlersForEvent(eventName);
-        foreach (var handler in handlers)
+        var handlerTypes = _subsManager.GetHandlersForEvent(eventName);
+        foreach (var type in handlerTypes)
         {
+          var handler = _serviceProvider.GetService(type) as IIntegrationEventHandler;
           var eventType = _subsManager.GetEventTypeByName(eventName);
           var integrationEvent = JsonConvert.DeserializeObject(message, eventType);
           var concreteType = typeof(IIntegrationEventHandler<>).MakeGenericType(eventType);

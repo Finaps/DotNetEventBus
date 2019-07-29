@@ -6,7 +6,7 @@ namespace Finaps.EventBus.Core.Abstractions
   {
     void Publish(IntegrationEvent @event);
 
-    void Subscribe<T, TH>(TH handler)
+    void Subscribe<T, TH>()
         where T : IntegrationEvent
         where TH : IIntegrationEventHandler<T>;
   }
