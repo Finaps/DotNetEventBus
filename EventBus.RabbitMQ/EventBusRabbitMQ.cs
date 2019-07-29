@@ -40,28 +40,6 @@ namespace Finaps.EventBus.RabbitMQ
       _queueName = queueName;
       _consumerChannel = CreateConsumerChannel();
       _retryCount = retryCount;
-      _subsManager.OnEventRemoved += SubsManager_OnEventRemoved;
-    }
-
-    private void SubsManager_OnEventRemoved(object sender, string eventName)
-    {
-      if (!_persistentConnection.IsConnected)
-      {
-        _persistentConnection.TryConnect();
-      }
-
-      using (var channel = _persistentConnection.CreateModel())
-      {
-        channel.QueueUnbind(queue: _queueName,
-            exchange: _exchangeName,
-            routingKey: eventName);
-
-        if (_subsManager.IsEmpty)
-        {
-          _queueName = string.Empty;
-          _consumerChannel.Close();
-        }
-      }
     }
 
     public void Publish(IntegrationEvent @event)
