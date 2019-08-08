@@ -125,7 +125,7 @@
         {
           foreach (var type in handlerTypes)
           {
-            var handler = _serviceProvider.GetService(type) as IIntegrationEventHandler;
+            var handler = scope.ServiceProvider.GetService(type) as IIntegrationEventHandler;
             var eventType = _subsManager.GetEventTypeByName(eventName);
             var integrationEvent = JsonConvert.DeserializeObject(message, eventType);
             var concreteType = typeof(IIntegrationEventHandler<>).MakeGenericType(eventType);
