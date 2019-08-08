@@ -6,6 +6,7 @@ using EventBus.Core.Extensions;
 using Finaps.EventBus.Core;
 using Finaps.EventBus.Core.Abstractions;
 using Finaps.EventBus.Core.Events;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -214,14 +215,17 @@ namespace Finaps.EventBus.RabbitMQ
 
       if (_subsManager.HasSubscriptionsForEvent(eventName))
       {
-        var handlerTypes = _subsManager.GetHandlersForEvent(eventName);
-        foreach (var type in handlerTypes)
+        using (var scope = _serviceProvider.CreateScope())
         {
-          var handler = _serviceProvider.GetService(type) as IIntegrationEventHandler;
-          var eventType = _subsManager.GetEventTypeByName(eventName);
-          var integrationEvent = JsonConvert.DeserializeObject(message, eventType);
-          var concreteType = typeof(IIntegrationEventHandler<>).MakeGenericType(eventType);
-          await (Task)concreteType.GetMethod("Handle").Invoke(handler, new object[] { integrationEvent });
+          var handlerTypes = _subsManager.GetHandlersForEvent(eventName);
+          foreach (var type in handlerTypes)
+          {
+            var handler = scope.ServiceProvider.GetService(type) as IIntegrationEventHandler;
+            var eventType = _subsManager.GetEventTypeByName(eventName);
+            var integrationEvent = JsonConvert.DeserializeObject(message, eventType);
+            var concreteType = typeof(IIntegrationEventHandler<>).MakeGenericType(eventType);
+            await (Task)concreteType.GetMethod("Handle").Invoke(handler, new object[] { integrationEvent });
+          }
         }
 
       }

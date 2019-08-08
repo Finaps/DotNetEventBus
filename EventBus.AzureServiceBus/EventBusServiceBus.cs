@@ -4,6 +4,7 @@
   using Finaps.EventBus.Core.Abstractions;
   using Finaps.EventBus.Core.Events;
   using Microsoft.Azure.ServiceBus;
+  using Microsoft.Extensions.DependencyInjection;
   using Microsoft.Extensions.Logging;
   using Newtonsoft.Json;
   using System;
@@ -120,15 +121,18 @@
       if (_subsManager.HasSubscriptionsForEvent(eventName))
       {
         var handlerTypes = _subsManager.GetHandlersForEvent(eventName);
-        foreach (var type in handlerTypes)
+        using (var scope = _serviceProvider.CreateScope())
         {
-          var handler = _serviceProvider.GetService(type) as IIntegrationEventHandler;
-          var eventType = _subsManager.GetEventTypeByName(eventName);
-          var integrationEvent = JsonConvert.DeserializeObject(message, eventType);
-          var concreteType = typeof(IIntegrationEventHandler<>).MakeGenericType(eventType);
-          await (Task)concreteType.GetMethod("Handle").Invoke(handler, new object[] { integrationEvent });
+          foreach (var type in handlerTypes)
+          {
+            var handler = _serviceProvider.GetService(type) as IIntegrationEventHandler;
+            var eventType = _subsManager.GetEventTypeByName(eventName);
+            var integrationEvent = JsonConvert.DeserializeObject(message, eventType);
+            var concreteType = typeof(IIntegrationEventHandler<>).MakeGenericType(eventType);
+            await (Task)concreteType.GetMethod("Handle").Invoke(handler, new object[] { integrationEvent });
+          }
+          processed = true;
         }
-        processed = true;
       }
       return processed;
     }

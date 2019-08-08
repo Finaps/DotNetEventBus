@@ -35,6 +35,7 @@ namespace EventBus.SampleProject
       services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
       services.AddTransient<MessagePostedEventHandler>();
       services.AddTransient<MessagePutEventHandler>();
+      services.AddScoped<ScopedDependency>();
       EventBusConfiguration eventBusConfiguration = new EventBusConfiguration();
       Configuration.GetSection("EventBus").Bind(eventBusConfiguration);
       if (eventBusConfiguration.UseRabbitMQ)

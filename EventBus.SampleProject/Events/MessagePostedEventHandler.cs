@@ -10,7 +10,8 @@ namespace EventBus.SampleProject.Events
     private readonly ILogger _logger;
 
     public MessagePostedEventHandler(
-      ILogger<MessagePostedEventHandler> logger
+      ILogger<MessagePostedEventHandler> logger,
+      ScopedDependency dependency
     )
     {
       _logger = logger;

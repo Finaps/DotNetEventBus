@@ -12,7 +12,6 @@ namespace Finaps.EventBus.Core.DependencyInjection
         where TH : IIntegrationEventHandler<T>
     {
       var eventBus = app.ApplicationServices.GetRequiredService<IEventBus>();
-      var handler = app.ApplicationServices.GetRequiredService<TH>();
       eventBus.Subscribe<T, TH>();
     }
   }
