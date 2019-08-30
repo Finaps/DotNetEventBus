@@ -16,8 +16,12 @@
       "path": "EventBus.SampleProject"
     },
     {
-      "name": "EventBus.Tests",
-      "path": "EventBus.Tests"
+      "name": "EventBus.UnitTests",
+      "path": "EventBus.UnitTests"
+    },
+    {
+      "name": "EventBus.IntegrationTests",
+      "path": "EventBus.IntegrationTests"
     },
     {
       "path": ".",
