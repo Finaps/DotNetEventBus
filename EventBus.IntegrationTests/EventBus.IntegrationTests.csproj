@@ -12,4 +12,10 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\EventBus.Core\EventBus.Core.csproj" />
+    <ProjectReference Include="..\EventBus.RabbitMQ\EventBus.RabbitMQ.csproj" />
+    <ProjectReference Include="..\EventBus.AzureServiceBus\EventBus.AzureServiceBus.csproj" />
+  </ItemGroup>
+
 </Project>

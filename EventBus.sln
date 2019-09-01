@@ -11,7 +11,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBus.SampleProject", "E
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBus.AzureServiceBus", "EventBus.AzureServiceBus\EventBus.AzureServiceBus.csproj", "{377BD3B7-7C12-4C4E-A021-C3E26AB3EA6D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBus.Tests", "EventBus.Tests\EventBus.Tests.csproj", "{BE2788EA-0C35-4573-86D0-D279D03DC23F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBus.UnitTests", "EventBus.UnitTests\EventBus.UnitTests.csproj", "{BE2788EA-0C35-4573-86D0-D279D03DC23F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBus.IntegrationTests", "EventBus.IntegrationTests\EventBus.IntegrationTests.csproj", "{FF4842A1-1B06-4E47-93B7-2D3E0F2A405D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -86,5 +88,17 @@ Global
 		{BE2788EA-0C35-4573-86D0-D279D03DC23F}.Release|x64.Build.0 = Release|Any CPU
 		{BE2788EA-0C35-4573-86D0-D279D03DC23F}.Release|x86.ActiveCfg = Release|Any CPU
 		{BE2788EA-0C35-4573-86D0-D279D03DC23F}.Release|x86.Build.0 = Release|Any CPU
+		{FF4842A1-1B06-4E47-93B7-2D3E0F2A405D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF4842A1-1B06-4E47-93B7-2D3E0F2A405D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF4842A1-1B06-4E47-93B7-2D3E0F2A405D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FF4842A1-1B06-4E47-93B7-2D3E0F2A405D}.Debug|x64.Build.0 = Debug|Any CPU
+		{FF4842A1-1B06-4E47-93B7-2D3E0F2A405D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FF4842A1-1B06-4E47-93B7-2D3E0F2A405D}.Debug|x86.Build.0 = Debug|Any CPU
+		{FF4842A1-1B06-4E47-93B7-2D3E0F2A405D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF4842A1-1B06-4E47-93B7-2D3E0F2A405D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF4842A1-1B06-4E47-93B7-2D3E0F2A405D}.Release|x64.ActiveCfg = Release|Any CPU
+		{FF4842A1-1B06-4E47-93B7-2D3E0F2A405D}.Release|x64.Build.0 = Release|Any CPU
+		{FF4842A1-1B06-4E47-93B7-2D3E0F2A405D}.Release|x86.ActiveCfg = Release|Any CPU
+		{FF4842A1-1B06-4E47-93B7-2D3E0F2A405D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
