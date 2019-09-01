@@ -1,0 +1,10 @@
+rabbit:
+     container_name: dev_rabbit
+     hostname: rabbit
+     image: rabbitmq
+     environment:
+        - RABBITMQ_DEFAULT_USER = user
+        - RABBITMQ_DEFAULT_PASS = user
+     ports:
+        - "5672:5672"
+        - "15672:15672"

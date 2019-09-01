@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\EventBus.Core\EventBus.Core.csproj" />
     <ProjectReference Include="..\EventBus.RabbitMQ\EventBus.RabbitMQ.csproj" />
+    <ProjectReference Include="..\EventBus.InMemory\EventBus.InMemory.csproj" />
     <ProjectReference Include="..\EventBus.AzureServiceBus\EventBus.AzureServiceBus.csproj" />
   </ItemGroup>
 
