@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Finaps.EventBus.Core;
@@ -17,6 +18,7 @@ namespace Finaps.EventBus.RabbitMQ
     private readonly ILogger<RabbitMQEventSubscriber> _logger;
     private readonly int _retryCount;
     private IModel _consumerChannel;
+    private bool _disposed;
 
     public RabbitMQEventSubscriber(
         IRabbitMQPersistentConnection persistentConnection,
@@ -32,7 +34,7 @@ namespace Finaps.EventBus.RabbitMQ
       _logger = logger;
       _retryCount = retryCount;
 
-      StartBasicConsume();
+      _consumerChannel = CreateConsumerChannel();
     }
     public event EventHandler<IntegrationEventReceivedArgs> OnEventReceived;
 
@@ -59,9 +61,21 @@ namespace Finaps.EventBus.RabbitMQ
 
     public void Dispose()
     {
-      if (_consumerChannel != null)
+      if (_disposed) return;
+
+      _disposed = true;
+
+      try
       {
-        _consumerChannel.Dispose();
+        if (_consumerChannel != null)
+        {
+          _consumerChannel.Dispose();
+        }
+        _persistentConnection.Dispose();
+      }
+      catch (IOException ex)
+      {
+        _logger.LogCritical(ex.ToString());
       }
     }
 

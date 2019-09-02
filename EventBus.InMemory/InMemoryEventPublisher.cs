@@ -14,6 +14,11 @@ namespace Finaps.EventBus.InMemory
       _events = events;
     }
 
+    public void Dispose()
+    {
+      return;
+    }
+
     public void Publish(IntegrationEvent @event)
     {
       _events.Add(@event);

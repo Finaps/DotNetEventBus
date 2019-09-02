@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Finaps.EventBus.Core.Abstractions;
@@ -10,57 +12,74 @@ using Xunit;
 
 namespace Finaps.EventBus.IntegrationTests
 {
-  public class RabbitMQEventBusTests
+  public class RabbitMQEventBusTests : IDisposable
   {
+
+    EventReceivedNotifier eventReceivedNotifier;
+    AutoResetEvent autoResetEvent;
+    IEventBus eventBus;
+
+    public RabbitMQEventBusTests()
+    {
+      eventReceivedNotifier = new EventReceivedNotifier();
+      autoResetEvent = new AutoResetEvent(false);
+      eventReceivedNotifier.OnEventReceived += (s, e) =>
+      {
+        autoResetEvent.Set();
+      };
+      eventBus = SetupEventBus(eventReceivedNotifier);
+    }
 
     [Fact]
     public void ListensCorrectly()
     {
-      var eventReceivedNotifier = new EventReceivedNotifier();
-      var are = new AutoResetEvent(false);
-      eventReceivedNotifier.OnEventReceived += (s, e) =>
-      {
-        are.Set();
-      };
-      var services = new ServiceCollection();
-      services.AddSingleton<EventReceivedNotifier>(eventReceivedNotifier);
-      services.AddScoped<SubscriptionTestEventHandler>();
-      services.AddSingleton(new NullLoggerFactory());
-      services.AddLogging();
-      services.AddRabbitMQ(new RabbitMQOptions()
-      {
-        ExchangeName = "Exchange",
-        QueueName = "IntegrationTests",
-        UserName = "guest",
-        Password = "guest"
-      });
-      var serviceProvider = new DefaultServiceProviderFactory().CreateServiceProvider(services);
-      var eventBus = serviceProvider.GetRequiredService<IEventBus>();
-      eventBus.Subscribe<SubscriptionTestEvent, SubscriptionTestEventHandler>();
-      string testString = "test";
-      var subscriptionTestEvent = new SubscriptionTestEvent()
-      {
-        TestString = testString
-      };
-      eventBus.Publish(subscriptionTestEvent);
-      var eventReceived = are.WaitOne(20000);
+      var subscriptionTestEvent = PublishSubscriptionTestEvent();
+      var eventReceived = autoResetEvent.WaitOne(20000);
       Assert.True(eventReceived);
       var consumedEvent = eventReceivedNotifier.Events.Single() as SubscriptionTestEvent;
-      Assert.Equal(testString, consumedEvent.TestString);
+      Assert.Equal(subscriptionTestEvent.TestString, consumedEvent.TestString);
       Assert.Equal(subscriptionTestEvent.Id, consumedEvent.Id);
       Assert.Equal(subscriptionTestEvent.CreationDate, consumedEvent.CreationDate);
 
     }
 
     [Fact]
-    public void CanCreateConnection()
+    public void CanPublishWhileReceiving()
     {
-      var eventReceivedNotifier = new EventReceivedNotifier();
-      var are = new AutoResetEvent(false);
-      eventReceivedNotifier.OnEventReceived += (s, e) =>
+      var eventPublisherEvent = new EventPublisherEvent();
+      eventBus.Publish(eventPublisherEvent);
+      var eventReceived = autoResetEvent.WaitOne(20000);
+      Assert.True(eventReceived);
+      Assert.NotEmpty(eventReceivedNotifier.Events);
+    }
+
+    [Fact]
+    public void EventsAreReceivedInOrder()
+    {
+      var publishedEvents = new List<SubscriptionTestEvent>();
+      for (int i = 0; i < 50; i++)
       {
-        are.Set();
+        publishedEvents.Add(PublishSubscriptionTestEvent());
+      }
+      var eventReceived = autoResetEvent.WaitOne(1000);
+      Assert.True(eventReceived);
+      var publishedGuids = publishedEvents.Select(@event => @event.Id);
+      var consumedGuids = eventReceivedNotifier.Events.Select(@event => @event.Id);
+      Assert.Equal(publishedGuids, consumedGuids);
+    }
+
+    private SubscriptionTestEvent PublishSubscriptionTestEvent()
+    {
+      var subscriptionTestEvent = new SubscriptionTestEvent()
+      {
+        TestString = "test"
       };
+      eventBus.Publish(subscriptionTestEvent);
+      return subscriptionTestEvent;
+    }
+
+    private static IEventBus SetupEventBus(EventReceivedNotifier eventReceivedNotifier)
+    {
       var services = new ServiceCollection();
       services.AddSingleton<EventReceivedNotifier>(eventReceivedNotifier);
       services.AddScoped<EventPublisherEventHandler>();
@@ -78,11 +97,13 @@ namespace Finaps.EventBus.IntegrationTests
       var eventBus = serviceProvider.GetRequiredService<IEventBus>();
       eventBus.Subscribe<EventPublisherEvent, EventPublisherEventHandler>();
       eventBus.Subscribe<SubscriptionTestEvent, SubscriptionTestEventHandler>();
-      var eventPublisherEvent = new EventPublisherEvent();
-      eventBus.Publish(eventPublisherEvent);
-      var eventReceived = are.WaitOne(20000);
-      Assert.True(eventReceived);
-      Assert.NotEmpty(eventReceivedNotifier.Events);
+      return eventBus;
+    }
+
+    public void Dispose()
+    {
+      autoResetEvent.Dispose();
+      eventBus.Dispose();
     }
   }
 }

@@ -1,9 +1,8 @@
 using System;
-using Finaps.EventBus.Core;
 
 namespace Finaps.EventBus.Core.Abstractions
 {
-  public interface IEventSubscriber
+  public interface IEventSubscriber : IDisposable
   {
     event EventHandler<IntegrationEventReceivedArgs> OnEventReceived;
     void Subscribe(string eventName);

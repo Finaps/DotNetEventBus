@@ -47,5 +47,9 @@ namespace Finaps.EventBus.InMemory
       }
     }
 
+    public void Dispose()
+    {
+      _events.Clear();
+    }
   }
 }

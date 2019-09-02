@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net.Sockets;
 using System.Text;
 using Finaps.EventBus.Core.Abstractions;
@@ -18,6 +19,7 @@ namespace Finaps.EventBus.RabbitMQ
     private readonly string _exchangeName;
     private readonly ILogger<RabbitMQEventPublisher> _logger;
     private readonly int _retryCount;
+    private bool _disposed;
 
     public RabbitMQEventPublisher(
         IRabbitMQPersistentConnection persistentConnection,
@@ -31,6 +33,23 @@ namespace Finaps.EventBus.RabbitMQ
       _logger = logger;
       _retryCount = retryCount;
     }
+
+    public void Dispose()
+    {
+      if (_disposed) return;
+
+      _disposed = true;
+
+      try
+      {
+        _persistentConnection.Dispose();
+      }
+      catch (IOException ex)
+      {
+        _logger.LogCritical(ex.ToString());
+      }
+    }
+
     public void Publish(IntegrationEvent @event)
     {
       if (!_persistentConnection.IsConnected)
@@ -75,5 +94,7 @@ namespace Finaps.EventBus.RabbitMQ
         });
       }
     }
+
+
   }
 }

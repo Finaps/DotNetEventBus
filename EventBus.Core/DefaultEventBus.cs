@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using Finaps.EventBus.Core.Abstractions;
 using Finaps.EventBus.Core.Events;
@@ -15,6 +16,7 @@ namespace Finaps.EventBus.Core
     private readonly IEventBusSubscriptionsManager _subscriptionsManager;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger _logger;
+    private bool _disposed;
 
     public DefaultEventBus(
       IEventPublisher publisher,
@@ -100,6 +102,23 @@ namespace Finaps.EventBus.Core
       else
       {
         _logger.LogWarning("No subscription for event: {EventName}", eventName);
+      }
+    }
+
+    public void Dispose()
+    {
+      if (_disposed) return;
+
+      _disposed = true;
+
+      try
+      {
+        _publisher.Dispose();
+        _subscriber.Dispose();
+      }
+      catch (IOException ex)
+      {
+        _logger.LogCritical(ex.ToString());
       }
     }
   }
