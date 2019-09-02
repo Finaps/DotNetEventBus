@@ -1,5 +1,4 @@
 using System;
-using System.Text;
 using System.Threading.Tasks;
 using Finaps.EventBus.Core.Abstractions;
 using Finaps.EventBus.Core.Events;
@@ -9,48 +8,38 @@ using Newtonsoft.Json;
 
 namespace Finaps.EventBus.Core
 {
-  public class EventBus : IEventBus
+  public class DefaultEventBus : IEventBus
   {
-    private readonly IEventBusConnection _connection;
+    private readonly IEventPublisher _publisher;
+    private readonly IEventSubscriber _subscriber;
     private readonly IEventBusSubscriptionsManager _subscriptionsManager;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger _logger;
 
-    public EventBus(
-      IEventBusConnection connection,
+    public DefaultEventBus(
+      IEventPublisher publisher,
+      IEventSubscriber subscriber,
       IEventBusSubscriptionsManager subscriptionsManager,
       IServiceProvider serviceProvider,
-      ILogger<EventBus> logger
+      ILogger logger
     )
     {
-      _connection = connection;
+      _subscriber = subscriber;
+      _publisher = publisher;
       _subscriptionsManager = subscriptionsManager;
       _serviceProvider = serviceProvider;
       _logger = logger;
 
-      SetupConnection();
+      _subscriber.OnEventReceived += Event_Received;
+
     }
 
-    private void SetupConnection()
-    {
-      _connection.TryConnect();
-      _connection.OnEventReceived += Event_Received;
-    }
     public void Publish(IntegrationEvent @event)
     {
-      EnsureConnection();
-      string eventName = GetEventKey(@event);
-      var message = JsonConvert.SerializeObject(@event);
-      var body = Encoding.UTF8.GetBytes(message);
-      _connection.Publish(eventName, message);
-    }
-
-    private void EnsureConnection()
-    {
-      if (!_connection.IsConnected)
-      {
-        _connection.TryConnect();
-      }
+      // string eventName = GetEventKey(@event);
+      // var message = JsonConvert.SerializeObject(@event);
+      // var body = Encoding.UTF8.GetBytes(message);
+      _publisher.Publish(@event);
     }
 
     private string GetEventKey(IntegrationEvent @event)
@@ -76,8 +65,7 @@ namespace Finaps.EventBus.Core
     {
       if (!_subscriptionsManager.HasSubscriptionsForEvent(eventName))
       {
-        EnsureConnection();
-        _connection.Subscribe(eventName);
+        _subscriber.Subscribe(eventName);
       }
     }
 

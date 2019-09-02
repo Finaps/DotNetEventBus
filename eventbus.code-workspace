@@ -1,26 +1,30 @@
 {
   "folders": [{
-      "name": "EventBus.Core",
+      "name": "Finaps.EventBus.Core",
       "path": "EventBus.Core"
     },
     {
-      "name": "EventBus.RabbitMQ",
+      "name": "Finaps.EventBus.RabbitMQ",
       "path": "EventBus.RabbitMQ"
     },
     {
-      "name": "EventBus.AzureServiceBus",
+      "name": "Finaps.EventBus.AzureServiceBus",
       "path": "EventBus.AzureServiceBus"
     },
     {
-      "name": "EventBus.SampleProject",
+      "name": "Finaps.EventBus.InMemory",
+      "path": "EventBus.InMemory"
+    },
+    {
+      "name": "Finaps.EventBus.SampleProject",
       "path": "EventBus.SampleProject"
     },
     {
-      "name": "EventBus.UnitTests",
+      "name": "Finaps.EventBus.UnitTests",
       "path": "EventBus.UnitTests"
     },
     {
-      "name": "EventBus.IntegrationTests",
+      "name": "Finaps.EventBus.IntegrationTests",
       "path": "EventBus.IntegrationTests"
     },
     {

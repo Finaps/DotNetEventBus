@@ -11,7 +11,7 @@ namespace Finaps.EventBus.RabbitMQ.DependencyInjection
     public static IServiceCollection AddRabbitMQ(this IServiceCollection services, RabbitMQOptions options = null)
     {
       options = options ?? new RabbitMQOptions();
-      services.AddSingleton<IRabbitMQPersistentConnection>(sp =>
+      services.AddTransient<IRabbitMQPersistentConnection>(sp =>
                 {
                   var logger = sp.GetRequiredService<ILogger<DefaultRabbitMQPersistentConnection>>();
 
@@ -26,16 +26,33 @@ namespace Finaps.EventBus.RabbitMQ.DependencyInjection
                   return new DefaultRabbitMQPersistentConnection(factory, logger, options.RetryCount);
                 });
       services.AddSingleton<IEventBusSubscriptionsManager, InMemoryEventBusSubscriptionsManager>();
-      services.AddSingleton<IEventBus>(sp =>
+      services.AddSingleton<IEventPublisher>(sp =>
       {
-        return new EventBusRabbitMQ(
+        return new RabbitMQEventPublisher(
           sp.GetRequiredService<IRabbitMQPersistentConnection>(),
-          sp.GetRequiredService<ILogger<EventBusRabbitMQ>>(),
-          sp.GetRequiredService<IEventBusSubscriptionsManager>(),
-          sp,
+          options.ExchangeName,
+          sp.GetRequiredService<ILogger<RabbitMQEventPublisher>>(),
+          options.RetryCount
+        );
+      });
+      services.AddSingleton<IEventSubscriber>(sp =>
+      {
+        return new RabbitMQEventSubscriber(
+          sp.GetRequiredService<IRabbitMQPersistentConnection>(),
           options.ExchangeName,
           options.QueueName,
+          sp.GetRequiredService<ILogger<RabbitMQEventSubscriber>>(),
           options.RetryCount
+        );
+      });
+      services.AddSingleton<IEventBus>(sp =>
+      {
+        return new DefaultEventBus(
+          sp.GetRequiredService<IEventPublisher>(),
+          sp.GetRequiredService<IEventSubscriber>(),
+          sp.GetRequiredService<IEventBusSubscriptionsManager>(),
+          sp,
+          sp.GetRequiredService<ILogger<EventBusRabbitMQ>>()
           );
       });
       return services;
