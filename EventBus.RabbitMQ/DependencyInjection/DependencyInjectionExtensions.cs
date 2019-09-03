@@ -52,7 +52,7 @@ namespace Finaps.EventBus.RabbitMQ.DependencyInjection
           sp.GetRequiredService<IEventSubscriber>(),
           sp.GetRequiredService<IEventBusSubscriptionsManager>(),
           sp,
-          sp.GetRequiredService<ILogger<EventBusRabbitMQ>>()
+          sp.GetRequiredService<ILoggerFactory>().CreateLogger("RabbitMQ")
           );
       });
       return services;

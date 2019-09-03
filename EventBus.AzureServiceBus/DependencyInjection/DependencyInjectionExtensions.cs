@@ -11,23 +11,38 @@ namespace Finaps.EventBus.AzureServiceBus.DependencyInjection
     public static IServiceCollection AddAzureServiceBus(this IServiceCollection services, AzureServiceBusOptions options = null)
     {
       options = options ?? new AzureServiceBusOptions();
-      services.AddSingleton<IServiceBusPersisterConnection>(sp =>
+      services.AddTransient<IServiceBusPersistentConnection>(sp =>
                 {
-                  var logger = sp.GetRequiredService<ILogger<DefaultServiceBusPersisterConnection>>();
+                  var logger = sp.GetRequiredService<ILogger<DefaultServiceBusPersistentConnection>>();
 
                   var serviceBusConnection = new ServiceBusConnectionStringBuilder(options.ConnectionString);
 
-                  return new DefaultServiceBusPersisterConnection(serviceBusConnection, logger);
+                  return new DefaultServiceBusPersistentConnection(serviceBusConnection, logger);
                 });
       services.AddSingleton<IEventBusSubscriptionsManager, InMemoryEventBusSubscriptionsManager>();
+      services.AddSingleton<IEventPublisher>(sp =>
+      {
+        return new AzureServiceBusEventPublisher(
+          sp.GetRequiredService<IServiceBusPersistentConnection>(),
+          sp.GetRequiredService<ILogger<AzureServiceBusEventPublisher>>()
+        );
+      });
+      services.AddSingleton<IEventSubscriber>(sp =>
+      {
+        return new AzureServiceBusEventSubscriber(
+          sp.GetRequiredService<IServiceBusPersistentConnection>(),
+          sp.GetRequiredService<ILogger<AzureServiceBusEventSubscriber>>(),
+          options.SubscriptionName
+        );
+      });
       services.AddSingleton<IEventBus>(sp =>
       {
-        return new EventBusServiceBus(
-          sp.GetRequiredService<IServiceBusPersisterConnection>(),
-          sp.GetRequiredService<ILogger<EventBusServiceBus>>(),
+        return new DefaultEventBus(
+          sp.GetRequiredService<IEventPublisher>(),
+          sp.GetRequiredService<IEventSubscriber>(),
           sp.GetRequiredService<IEventBusSubscriptionsManager>(),
           sp,
-          options.SubscriptionName
+          sp.GetRequiredService<ILoggerFactory>().CreateLogger("AzureServiceBus")
           );
       });
       return services;

@@ -8,13 +8,14 @@ using Finaps.EventBus.InMemory.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Finaps.EventBus.IntegrationTests
 {
-  public class InMemoryEventBusTests : BaseEventBusTests
+  public class AzureServiceBusEventBusTests : BaseEventBusTests
   {
     private static readonly int ConsumeTimeoutInMilliSeconds = 5000;
-    public InMemoryEventBusTests() : base(EventBusType.In_Memory) { }
+    public AzureServiceBusEventBusTests() : base(EventBusType.AZURE) { }
 
     [Fact]
     public void ListensCorrectly()
@@ -43,10 +44,11 @@ namespace Finaps.EventBus.IntegrationTests
     public void EventsAreReceivedInOrder()
     {
       var publishedEvents = new List<SubscriptionTestEvent>();
-      for (int i = 0; i < 50; i++)
+      for (int i = 0; i < 5; i++)
       {
         publishedEvents.Add(PublishSubscriptionTestEvent());
       }
+
       var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
       Assert.True(eventReceived);
       var publishedGuids = publishedEvents.Select(@event => @event.Id);

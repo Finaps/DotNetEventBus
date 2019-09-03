@@ -8,16 +8,23 @@ namespace EventBus.SampleProject.Events
   public class MessagePutEventHandler : IIntegrationEventHandler<MessagePutEvent>
   {
     private readonly ILogger _logger;
+    private readonly IEventBus _eventBus;
 
     public MessagePutEventHandler(
-      ILogger<MessagePutEventHandler> logger
+      ILogger<MessagePutEventHandler> logger,
+      IEventBus eventBus
     )
     {
       _logger = logger;
+      _eventBus = eventBus;
     }
     public async Task Handle(MessagePutEvent @event)
     {
       _logger.LogInformation($"Message put: {@event.Message}");
+      _eventBus.Publish(new MessagePostedEvent()
+      {
+        Message = "Posted from put"
+      });
       await Task.CompletedTask;
     }
   }

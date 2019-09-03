@@ -4,16 +4,16 @@ using System;
 
 namespace Finaps.EventBus.AzureServiceBus
 {
-  public class DefaultServiceBusPersisterConnection : IServiceBusPersisterConnection
+  public class DefaultServiceBusPersistentConnection : IServiceBusPersistentConnection
   {
-    private readonly ILogger<DefaultServiceBusPersisterConnection> _logger;
+    private readonly ILogger<DefaultServiceBusPersistentConnection> _logger;
     private readonly ServiceBusConnectionStringBuilder _serviceBusConnectionStringBuilder;
     private ITopicClient _topicClient;
 
     bool _disposed;
 
-    public DefaultServiceBusPersisterConnection(ServiceBusConnectionStringBuilder serviceBusConnectionStringBuilder,
-        ILogger<DefaultServiceBusPersisterConnection> logger)
+    public DefaultServiceBusPersistentConnection(ServiceBusConnectionStringBuilder serviceBusConnectionStringBuilder,
+        ILogger<DefaultServiceBusPersistentConnection> logger)
     {
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -39,6 +39,7 @@ namespace Finaps.EventBus.AzureServiceBus
       if (_disposed) return;
 
       _disposed = true;
+      _topicClient.CloseAsync();
     }
   }
 }

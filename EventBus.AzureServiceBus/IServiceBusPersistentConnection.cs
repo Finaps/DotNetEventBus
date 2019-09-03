@@ -3,7 +3,7 @@
   using Microsoft.Azure.ServiceBus;
   using System;
 
-  public interface IServiceBusPersisterConnection : IDisposable
+  public interface IServiceBusPersistentConnection : IDisposable
   {
     ServiceBusConnectionStringBuilder ServiceBusConnectionStringBuilder { get; }
 

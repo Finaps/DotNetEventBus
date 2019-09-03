@@ -112,7 +112,7 @@ namespace Finaps.EventBus.RabbitMQ
       };
       try
       {
-        OnEventReceived?.Invoke(this, integrationEventReceivedArgs);
+        await Task.Run(() => OnEventReceived?.Invoke(this, integrationEventReceivedArgs));
       }
 
       catch (Exception ex)

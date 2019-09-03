@@ -12,29 +12,18 @@ using Xunit;
 
 namespace Finaps.EventBus.IntegrationTests
 {
-  public class RabbitMQEventBusTests : IDisposable
+  public class RabbitMQEventBusTests : BaseEventBusTests
   {
 
-    EventReceivedNotifier eventReceivedNotifier;
-    AutoResetEvent autoResetEvent;
-    IEventBus eventBus;
+    private static readonly int ConsumeTimeoutInMilliSeconds = 5000;
 
-    public RabbitMQEventBusTests()
-    {
-      eventReceivedNotifier = new EventReceivedNotifier();
-      autoResetEvent = new AutoResetEvent(false);
-      eventReceivedNotifier.OnEventReceived += (s, e) =>
-      {
-        autoResetEvent.Set();
-      };
-      eventBus = SetupEventBus(eventReceivedNotifier);
-    }
+    public RabbitMQEventBusTests() : base(EventBusType.RabbitMQ) { }
 
     [Fact]
     public void ListensCorrectly()
     {
       var subscriptionTestEvent = PublishSubscriptionTestEvent();
-      var eventReceived = autoResetEvent.WaitOne(20000);
+      var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
       Assert.True(eventReceived);
       var consumedEvent = eventReceivedNotifier.Events.Single() as SubscriptionTestEvent;
       Assert.Equal(subscriptionTestEvent.TestString, consumedEvent.TestString);
@@ -48,7 +37,7 @@ namespace Finaps.EventBus.IntegrationTests
     {
       var eventPublisherEvent = new EventPublisherEvent();
       eventBus.Publish(eventPublisherEvent);
-      var eventReceived = autoResetEvent.WaitOne(20000);
+      var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
       Assert.True(eventReceived);
       Assert.NotEmpty(eventReceivedNotifier.Events);
     }
@@ -61,49 +50,13 @@ namespace Finaps.EventBus.IntegrationTests
       {
         publishedEvents.Add(PublishSubscriptionTestEvent());
       }
-      var eventReceived = autoResetEvent.WaitOne(1000);
+      var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
       Assert.True(eventReceived);
       var publishedGuids = publishedEvents.Select(@event => @event.Id);
       var consumedGuids = eventReceivedNotifier.Events.Select(@event => @event.Id);
       Assert.Equal(publishedGuids, consumedGuids);
     }
 
-    private SubscriptionTestEvent PublishSubscriptionTestEvent()
-    {
-      var subscriptionTestEvent = new SubscriptionTestEvent()
-      {
-        TestString = "test"
-      };
-      eventBus.Publish(subscriptionTestEvent);
-      return subscriptionTestEvent;
-    }
 
-    private static IEventBus SetupEventBus(EventReceivedNotifier eventReceivedNotifier)
-    {
-      var services = new ServiceCollection();
-      services.AddSingleton<EventReceivedNotifier>(eventReceivedNotifier);
-      services.AddScoped<EventPublisherEventHandler>();
-      services.AddScoped<SubscriptionTestEventHandler>();
-      services.AddRabbitMQ(new RabbitMQOptions()
-      {
-        ExchangeName = "Exchange",
-        QueueName = "IntegrationTests",
-        UserName = "guest",
-        Password = "guest"
-      });
-      services.AddSingleton(new NullLoggerFactory());
-      services.AddLogging();
-      var serviceProvider = new DefaultServiceProviderFactory().CreateServiceProvider(services);
-      var eventBus = serviceProvider.GetRequiredService<IEventBus>();
-      eventBus.Subscribe<EventPublisherEvent, EventPublisherEventHandler>();
-      eventBus.Subscribe<SubscriptionTestEvent, SubscriptionTestEventHandler>();
-      return eventBus;
-    }
-
-    public void Dispose()
-    {
-      autoResetEvent.Dispose();
-      eventBus.Dispose();
-    }
   }
 }
