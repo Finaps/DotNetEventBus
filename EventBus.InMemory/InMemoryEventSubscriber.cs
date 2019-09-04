@@ -50,6 +50,7 @@ namespace Finaps.EventBus.InMemory
     public void Dispose()
     {
       _events.Clear();
+      _events.CollectionChanged -= Event_Collection_Changed;
     }
   }
 }

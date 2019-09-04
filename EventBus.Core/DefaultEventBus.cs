@@ -111,6 +111,8 @@ namespace Finaps.EventBus.Core
 
       _disposed = true;
 
+      _subscriber.OnEventReceived -= Event_Received;
+
       try
       {
         _publisher.Dispose();
