@@ -10,6 +10,7 @@ pool:
 # just the build configuration is defined, in this case we are building Release packages
 variables:
   buildConfiguration: 'Release'
+  unitTestsProjPath: 'EventBus.UnitTests/EventBus.UnitTests.csproj'
 
 #The build has 4 seperate tasks run under 1 step
 steps:
@@ -23,7 +24,7 @@ steps:
   displayName: 'dotnet test'
   inputs:
     command: 'test'
-    arguments: '--configuration $(buildConfiguration)'
+    arguments: '$(unitTestsProjPath) --configuration $(buildConfiguration)'
     
 # The second task is dotnet pack command again pointing to the csproj file
 # The nobuild means the project will not be compiled before running pack, because its already built in above step
