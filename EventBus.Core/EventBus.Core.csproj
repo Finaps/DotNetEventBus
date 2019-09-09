@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-     <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
     <PackageId>Finaps.EventBus.Core</PackageId>
     <Company>Finaps</Company>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
