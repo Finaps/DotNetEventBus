@@ -51,10 +51,10 @@ steps:
     feedsToUse: 'select'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
     nuGetFeedType: 'external'
-    versioningScheme: 'off'
-    # majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    # minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    # patchVersion: '$(Rev:.rr)' # Required when versioningScheme == ByPrereleaseNumber
+    versioningScheme: 'byPrereleaseNumber'
+    majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
+    minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
+    patchVersion: '$(Rev:.rr)' # Required when versioningScheme == ByPrereleaseNumber
     includeNuGetOrg: true
     publishFeedCredentials: 'NugetCredentials'
     allowPackageConflicts: true
