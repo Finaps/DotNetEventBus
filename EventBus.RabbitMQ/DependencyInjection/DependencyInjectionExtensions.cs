@@ -17,10 +17,11 @@ namespace Finaps.EventBus.RabbitMQ.DependencyInjection
 
                   var factory = new ConnectionFactory()
                   {
-                    HostName = options.HostName,
                     DispatchConsumersAsync = true,
+                    HostName = options.HostName,
                     UserName = options.UserName,
                     Password = options.Password,
+                    VirtualHost = options.VirtualHost
                   };
 
                   return new DefaultRabbitMQPersistentConnection(factory, logger, options.RetryCount);
