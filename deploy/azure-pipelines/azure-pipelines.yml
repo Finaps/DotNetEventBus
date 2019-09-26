@@ -22,7 +22,7 @@ steps:
   inputs:
     command: 'build'
     arguments: '--configuration $(buildConfiguration)'
-    versioningScheme: 'byPrereleaseNumber'
+    # versioningScheme: 'byPrereleaseNumber'
     majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
     minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
     patchVersion: '$(patchVersion)'
@@ -40,7 +40,7 @@ steps:
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
   inputs:
     command: 'pack'
-    versioningScheme: 'byPrereleaseNumber'
+    # versioningScheme: 'byPrereleaseNumber'
     majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
     minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
     patchVersion: '$(patchVersion)'
@@ -59,10 +59,10 @@ steps:
     feedsToUse: 'select'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
     nuGetFeedType: 'external'
-    versioningScheme: 'byPrereleaseNumber'
+    # versioningScheme: 'byPrereleaseNumber'
     majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
     minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    patchVersion: '$(Rev:.rr)' # Required when versioningScheme == ByPrereleaseNumber
+    patchVersion: '$(patchVersion)' # Required when versioningScheme == ByPrereleaseNumber
     includeNuGetOrg: true
     publishFeedCredentials: 'NugetCredentials'
     allowPackageConflicts: true
