@@ -14,6 +14,7 @@ variables:
   majorVersion : 0
   minorVersion: 1
   patchVersion: $[counter(variables['minorVersion'], 0)]
+  BUILD_BUILDNUMBER: $(majorVersion).$(minorVersion).$(patchVersion)
 
 #The build has 4 seperate tasks run under 1 step
 steps:
@@ -23,9 +24,6 @@ steps:
     command: 'build'
     arguments: '--configuration $(buildConfiguration)'
     versioningScheme: 'byBuildNumber'
-    majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    patchVersion: '$(patchVersion)'
 
 - task: DotNetCoreCLI@2
   displayName: 'dotnet test'
@@ -41,9 +39,6 @@ steps:
   inputs:
     command: 'pack'
     versioningScheme: 'byBuildNumber'
-    majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    patchVersion: '$(patchVersion)'
     arguments: '--configuration $(buildConfiguration)'
     nobuild: true
 
@@ -60,9 +55,6 @@ steps:
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
     nuGetFeedType: 'external'
     versioningScheme: 'byBuildNumber'
-    majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    patchVersion: '$(patchVersion)' # Required when versioningScheme == ByPrereleaseNumber
     includeNuGetOrg: true
     publishFeedCredentials: 'NugetCredentials'
     allowPackageConflicts: true
