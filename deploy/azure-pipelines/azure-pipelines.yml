@@ -23,7 +23,6 @@ steps:
   inputs:
     command: 'build'
     arguments: '--configuration $(buildConfiguration)'
-    versioningScheme: 'byBuildNumber'
 
 - task: DotNetCoreCLI@2
   displayName: 'dotnet test'
@@ -54,7 +53,6 @@ steps:
     feedsToUse: 'select'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
     nuGetFeedType: 'external'
-    versioningScheme: 'byBuildNumber'
     includeNuGetOrg: true
     publishFeedCredentials: 'NugetCredentials'
     allowPackageConflicts: true
