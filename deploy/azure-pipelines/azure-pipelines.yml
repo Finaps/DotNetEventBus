@@ -23,9 +23,9 @@ steps:
     command: 'build'
     arguments: '--configuration $(buildConfiguration)'
     # versioningScheme: 'byPrereleaseNumber'
-    majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    patchVersion: '$(patchVersion)'
+    # majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
+    # minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
+    # patchVersion: '$(patchVersion)'
 
 - task: DotNetCoreCLI@2
   displayName: 'dotnet test'
@@ -41,9 +41,9 @@ steps:
   inputs:
     command: 'pack'
     # versioningScheme: 'byPrereleaseNumber'
-    majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    patchVersion: '$(patchVersion)'
+    # majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
+    # minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
+    # patchVersion: '$(patchVersion)'
     arguments: '--configuration $(buildConfiguration)'
     nobuild: true
 
@@ -60,9 +60,9 @@ steps:
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
     nuGetFeedType: 'external'
     # versioningScheme: 'byPrereleaseNumber'
-    majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    patchVersion: '$(patchVersion)' # Required when versioningScheme == ByPrereleaseNumber
+    # majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
+    # minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
+    # patchVersion: '$(patchVersion)' # Required when versioningScheme == ByPrereleaseNumber
     includeNuGetOrg: true
     publishFeedCredentials: 'NugetCredentials'
     allowPackageConflicts: true
