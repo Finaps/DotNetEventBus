@@ -5,20 +5,20 @@
 
   <PropertyGroup>
     <!-- edit this value to change the current MAJOR.MINOR version -->
-    <VersionPrefix>$(majorVersion).$(minorVersion)</VersionPrefix>
+    <!-- <VersionPrefix>$(majorVersion).$(minorVersion)</VersionPrefix> -->
   </PropertyGroup>
 
   <Choose>
     <When Condition=" '$(Prerelease)' != '' ">
       <PropertyGroup>
         <!-- Prerelease version numbers are MAJOR.MINOR.0-pre-build###### -->
-        <VersionSuffix>$(Prerelease)-build$(BUILD_BUILDID.PadLeft(6, '0'))</VersionSuffix>
+        <!-- <VersionSuffix>$(VersionPrefix).$(patchVersion)-build$(Prerelease)</VersionSuffix> -->
       </PropertyGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
         <!-- Release version numbers are MAJOR.MINOR.# -->
-        <VersionPrefix>$(VersionPrefix).$(patchVersion)</VersionPrefix>
+        <!-- <VersionPrefix>$(VersionPrefix).$(patchVersion)</VersionPrefix> -->
       </PropertyGroup>
     </Otherwise>
   </Choose>

@@ -22,10 +22,10 @@ steps:
   inputs:
     command: 'build'
     arguments: '--configuration $(buildConfiguration)'
-    # versioningScheme: 'byPrereleaseNumber'
-    # majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    # minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    # patchVersion: '$(patchVersion)'
+    versioningScheme: 'byBuildNumber'
+    majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
+    minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
+    patchVersion: '$(patchVersion)'
 
 - task: DotNetCoreCLI@2
   displayName: 'dotnet test'
@@ -40,10 +40,10 @@ steps:
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
   inputs:
     command: 'pack'
-    # versioningScheme: 'byPrereleaseNumber'
-    # majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    # minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    # patchVersion: '$(patchVersion)'
+    versioningScheme: 'byBuildNumber'
+    majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
+    minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
+    patchVersion: '$(patchVersion)'
     arguments: '--configuration $(buildConfiguration)'
     nobuild: true
 
@@ -59,10 +59,10 @@ steps:
     feedsToUse: 'select'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
     nuGetFeedType: 'external'
-    # versioningScheme: 'byPrereleaseNumber'
-    # majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    # minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
-    # patchVersion: '$(patchVersion)' # Required when versioningScheme == ByPrereleaseNumber
+    versioningScheme: 'byBuildNumber'
+    majorVersion: '$(majorVersion)' # Required when versioningScheme == ByPrereleaseNumber
+    minorVersion: '$(minorVersion)' # Required when versioningScheme == ByPrereleaseNumber
+    patchVersion: '$(patchVersion)' # Required when versioningScheme == ByPrereleaseNumber
     includeNuGetOrg: true
     publishFeedCredentials: 'NugetCredentials'
     allowPackageConflicts: true
