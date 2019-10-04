@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Threading.Tasks;
 using Finaps.EventBus.Core;
 using Finaps.EventBus.Core.Abstractions;
 using Finaps.EventBus.Core.Events;
@@ -11,46 +13,43 @@ namespace Finaps.EventBus.InMemory
 {
   public class InMemoryEventSubscriber : IEventSubscriber
   {
-    private readonly ObservableCollection<IntegrationEvent> _events;
+    private readonly BlockingCollection<IntegrationEvent> _events;
     private List<string> subscriptions = new List<string>();
-    public event EventHandler<IntegrationEventReceivedArgs> OnEventReceived;
+    public event AsyncEventHandler<IntegrationEventReceivedArgs> OnEventReceived;
 
-    public InMemoryEventSubscriber(ObservableCollection<IntegrationEvent> events)
+    public InMemoryEventSubscriber(BlockingCollection<IntegrationEvent> events)
     {
       _events = events;
-      _events.CollectionChanged += Event_Collection_Changed;
+      Task.Run(async () =>
+      {
+        foreach (var integrationEvent in _events.GetConsumingEnumerable())
+        {
+          string eventName = integrationEvent.GetType().Name;
+          if (subscriptions.Contains(eventName))
+          {
+            var eventArgs = new IntegrationEventReceivedArgs()
+            {
+              EventName = eventName,
+              Message = JsonConvert.SerializeObject(integrationEvent)
+            };
+            if (OnEventReceived != null)
+            {
+              await OnEventReceived.Invoke(this, eventArgs);
+            }
+
+          }
+        }
+      });
     }
+
     public void Subscribe(string eventName)
     {
       subscriptions.Add(eventName);
     }
 
-    private void Event_Collection_Changed(object sender, NotifyCollectionChangedEventArgs e)
-    {
-      if (e.Action != NotifyCollectionChangedAction.Add)
-      {
-        return;
-      }
-
-      foreach (var integrationEvent in e.NewItems)
-      {
-        string eventName = integrationEvent.GetType().Name;
-        if (subscriptions.Contains(eventName))
-        {
-          var eventArgs = new IntegrationEventReceivedArgs()
-          {
-            EventName = eventName,
-            Message = JsonConvert.SerializeObject(integrationEvent)
-          };
-          OnEventReceived?.Invoke(this, eventArgs);
-        }
-      }
-    }
-
     public void Dispose()
     {
-      _events.Clear();
-      _events.CollectionChanged -= Event_Collection_Changed;
+      _events.Dispose();
     }
   }
 }

@@ -71,7 +71,7 @@ namespace Finaps.EventBus.Core
       }
     }
 
-    private async void Event_Received(object sender, IntegrationEventReceivedArgs eventArgs)
+    private async Task Event_Received(object sender, IntegrationEventReceivedArgs eventArgs)
     {
       string eventName = eventArgs.EventName;
       string message = eventArgs.Message;

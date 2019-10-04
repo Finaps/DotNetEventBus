@@ -4,6 +4,6 @@ namespace Finaps.EventBus.IntegrationTests
   {
     In_Memory,
     RabbitMQ,
-    AZURE
+    Azure
   }
 }

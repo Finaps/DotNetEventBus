@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using Finaps.EventBus.Core;
 using Finaps.EventBus.Core.Abstractions;
@@ -11,7 +12,7 @@ namespace Finaps.EventBus.InMemory.DependencyInjection
   {
     public static IServiceCollection AddInMemoryEventBus(this IServiceCollection services)
     {
-      var events = new ObservableCollection<IntegrationEvent>();
+      var events = new BlockingCollection<IntegrationEvent>();
       services.AddSingleton<IEventBusSubscriptionsManager, InMemoryEventBusSubscriptionsManager>();
       services.AddSingleton<IEventPublisher>(sp =>
       {

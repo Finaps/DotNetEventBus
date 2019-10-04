@@ -14,7 +14,7 @@ namespace Finaps.EventBus.AzureServiceBus
     private readonly IServiceBusPersistentConnection _serviceBusPersisterConnection;
     private readonly ILogger<AzureServiceBusEventSubscriber> _logger;
     private readonly SubscriptionClient _subscriptionClient;
-    public event EventHandler<IntegrationEventReceivedArgs> OnEventReceived;
+    public event AsyncEventHandler<IntegrationEventReceivedArgs> OnEventReceived;
 
     public AzureServiceBusEventSubscriber(IServiceBusPersistentConnection serviceBusPersisterConnection,
         ILogger<AzureServiceBusEventSubscriber> logger, string subscriptionClientName)
@@ -71,7 +71,7 @@ namespace Finaps.EventBus.AzureServiceBus
             EventName = eventName,
             Message = messageData
           };
-          await Task.Run(() => OnEventReceived?.Invoke(this, integrationEventReceivedArgs));
+          await Task.Run(async () => await (OnEventReceived?.Invoke(this, integrationEventReceivedArgs) ?? Task.CompletedTask));
           await _subscriptionClient.CompleteAsync(message.SystemProperties.LockToken);
         },
         new MessageHandlerOptions(ExceptionReceivedHandler) { MaxConcurrentCalls = 10, AutoComplete = false });

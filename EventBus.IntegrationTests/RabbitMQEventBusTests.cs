@@ -19,43 +19,43 @@ namespace Finaps.EventBus.IntegrationTests
 
     public RabbitMQEventBusTests() : base(EventBusType.RabbitMQ) { }
 
-    [Fact]
-    public void ListensCorrectly()
-    {
-      var subscriptionTestEvent = PublishSubscriptionTestEvent();
-      var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
-      Assert.True(eventReceived);
-      var consumedEvent = eventReceivedNotifier.Events.Single() as SubscriptionTestEvent;
-      Assert.Equal(subscriptionTestEvent.TestString, consumedEvent.TestString);
-      Assert.Equal(subscriptionTestEvent.Id, consumedEvent.Id);
-      Assert.Equal(subscriptionTestEvent.CreationDate, consumedEvent.CreationDate);
+    // [Fact]
+    // public void ListensCorrectly()
+    // {
+    //   var subscriptionTestEvent = PublishSubscriptionTestEvent();
+    //   var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
+    //   Assert.True(eventReceived);
+    //   var consumedEvent = eventReceivedNotifier.Events.Single() as SubscriptionTestEvent;
+    //   Assert.Equal(subscriptionTestEvent.TestString, consumedEvent.TestString);
+    //   Assert.Equal(subscriptionTestEvent.Id, consumedEvent.Id);
+    //   Assert.Equal(subscriptionTestEvent.CreationDate, consumedEvent.CreationDate);
 
-    }
+    // }
 
-    [Fact]
-    public void CanPublishWhileReceiving()
-    {
-      var eventPublisherEvent = new EventPublisherEvent();
-      eventBus.Publish(eventPublisherEvent);
-      var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
-      Assert.True(eventReceived);
-      Assert.NotEmpty(eventReceivedNotifier.Events);
-    }
+    // [Fact]
+    // public void CanPublishWhileReceiving()
+    // {
+    //   var eventPublisherEvent = new EventPublisherEvent();
+    //   eventBus.Publish(eventPublisherEvent);
+    //   var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
+    //   Assert.True(eventReceived);
+    //   Assert.NotEmpty(eventReceivedNotifier.Events);
+    // }
 
-    [Fact]
-    public void EventsAreReceivedInOrder()
-    {
-      var publishedEvents = new List<SubscriptionTestEvent>();
-      for (int i = 0; i < 50; i++)
-      {
-        publishedEvents.Add(PublishSubscriptionTestEvent());
-      }
-      var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
-      Assert.True(eventReceived);
-      var publishedGuids = publishedEvents.Select(@event => @event.Id);
-      var consumedGuids = eventReceivedNotifier.Events.Select(@event => @event.Id);
-      Assert.Equal(publishedGuids, consumedGuids);
-    }
+    // [Fact]
+    // public void EventsAreReceivedInOrder()
+    // {
+    //   var publishedEvents = new List<SubscriptionTestEvent>();
+    //   for (int i = 0; i < 50; i++)
+    //   {
+    //     publishedEvents.Add(PublishSubscriptionTestEvent());
+    //   }
+    //   var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
+    //   Assert.True(eventReceived);
+    //   var publishedGuids = publishedEvents.Select(@event => @event.Id);
+    //   var consumedGuids = eventReceivedNotifier.Events.Select(@event => @event.Id);
+    //   Assert.Equal(publishedGuids, consumedGuids);
+    // }
 
 
   }

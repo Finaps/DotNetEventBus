@@ -36,7 +36,7 @@ namespace Finaps.EventBus.RabbitMQ
 
       _consumerChannel = CreateConsumerChannel();
     }
-    public event EventHandler<IntegrationEventReceivedArgs> OnEventReceived;
+    public event Core.Abstractions.AsyncEventHandler<IntegrationEventReceivedArgs> OnEventReceived;
 
     public void Subscribe(string eventName)
     {
@@ -112,7 +112,7 @@ namespace Finaps.EventBus.RabbitMQ
       };
       try
       {
-        await Task.Run(() => OnEventReceived?.Invoke(this, integrationEventReceivedArgs));
+        await OnEventReceived?.Invoke(this, integrationEventReceivedArgs);
       }
 
       catch (Exception ex)

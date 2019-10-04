@@ -4,7 +4,7 @@ using EventBus.Tests.TestEvents;
 using Finaps.EventBus.Core;
 using Xunit;
 
-namespace EventBus.Tests
+namespace Finaps.EventBus.Tests
 {
   public class InMemoryEventBusSubscriptionsManagerTests
   {

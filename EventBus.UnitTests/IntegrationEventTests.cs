@@ -2,7 +2,7 @@ using System;
 using EventBus.Tests.TestEvents;
 using Xunit;
 
-namespace EventBus.Tests
+namespace Finaps.EventBus.Tests
 {
   public class IntegrationEventTests
   {
