@@ -21,6 +21,7 @@ namespace Finaps.EventBus.IntegrationTests
 {
   public abstract class BaseEventBusTests : IDisposable
   {
+    private static readonly int ConsumeTimeoutInMilliSeconds = 5000;
     protected EventReceivedNotifier eventReceivedNotifier;
     protected IntegerIncrementer integerIncrementer;
     protected AutoResetEvent autoResetEvent;
@@ -106,7 +107,7 @@ namespace Finaps.EventBus.IntegrationTests
     public void ListensCorrectly()
     {
       var subscriptionTestEvent = PublishSubscriptionTestEvent();
-      var eventReceived = autoResetEvent.WaitOne(5000);
+      var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
       Assert.True(eventReceived);
       var consumedEvent = eventReceivedNotifier.Events.Single() as SubscriptionTestEvent;
       Assert.Equal(subscriptionTestEvent.TestString, consumedEvent.TestString);
@@ -120,7 +121,7 @@ namespace Finaps.EventBus.IntegrationTests
     {
       var eventPublisherEvent = new EventPublisherEvent();
       eventBus.Publish(eventPublisherEvent);
-      var eventReceived = autoResetEvent.WaitOne(5000);
+      var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
       Assert.True(eventReceived);
       Assert.NotEmpty(eventReceivedNotifier.Events);
     }
@@ -133,7 +134,7 @@ namespace Finaps.EventBus.IntegrationTests
       {
         publishedEvents.Add(PublishSubscriptionTestEvent());
       }
-      var eventReceived = autoResetEvent.WaitOne(5000);
+      var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
       Assert.True(eventReceived);
       var publishedGuids = publishedEvents.Select(@event => @event.Id);
       var consumedGuids = eventReceivedNotifier.Events.Select(@event => @event.Id);
