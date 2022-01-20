@@ -1,14 +1,16 @@
+
 using System;
-using Finaps.EventBus.Core.Events;
+using System.Threading.Tasks;
+using Finaps.EventBus.Core.Models;
 
 namespace Finaps.EventBus.Core.Abstractions
 {
-  public interface IEventBus : IDisposable
+  public interface IEventBus : IAsyncDisposable
   {
-    void Publish(IntegrationEvent @event);
+    Task PublishAsync(IntegrationEvent @event);
 
-    void Subscribe<T, TH>()
-        where T : IntegrationEvent
-        where TH : IIntegrationEventHandler<T>;
+    Task StartConsumingAsync();
+
+    void AddSubscription(EventSubscription subscription);
   }
 }

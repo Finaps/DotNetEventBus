@@ -1,10 +1,10 @@
 using System;
-using Finaps.EventBus.Core.Events;
+using System.Threading.Tasks;
 
 namespace Finaps.EventBus.Core.Abstractions
 {
-  public interface IEventPublisher : IDisposable
+  public interface IEventPublisher : IAsyncDisposable
   {
-    void Publish(IntegrationEvent @event);
+    Task PublishAsync(string message, string eventName, string messageId);
   }
 }

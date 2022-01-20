@@ -94,8 +94,8 @@ namespace Finaps.EventBus.Tests
     public void GetEventKeyReturnsCorrectValue()
     {
       var manager = new InMemoryEventBusSubscriptionsManager();
-      string key = manager.GetEventKey<TestEvent>();
-      Assert.Equal("TestEvent", key);
+      manager.AddSubscription<TestEvent, TestEventHandler>();
+      Assert.True(manager.HasSubscriptionsForEvent<TestEvent>());
     }
   }
 }

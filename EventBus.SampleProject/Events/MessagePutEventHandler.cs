@@ -21,7 +21,7 @@ namespace EventBus.SampleProject.Events
     public async Task Handle(MessagePutEvent @event)
     {
       _logger.LogInformation($"Message put: {@event.Message}");
-      _eventBus.Publish(new MessagePostedEvent()
+      await _eventBus.PublishAsync(new MessagePostedEvent()
       {
         Message = "Posted from put"
       });

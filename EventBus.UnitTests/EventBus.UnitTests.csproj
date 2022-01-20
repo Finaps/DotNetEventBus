@@ -1,9 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+  <PropertyGroup Condition="'$(SingleTestPlatform)' == 'true'">
+    <TargetFramework>net6</TargetFramework>
+  </PropertyGroup>
 
-    <IsPackable>false</IsPackable>
+  <PropertyGroup Condition="'$(SingleTestPlatform)' != 'true' and '$(OS)' != 'Windows_NT'">
+    <TargetFrameworks>net6;net5;netcoreapp3.1</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

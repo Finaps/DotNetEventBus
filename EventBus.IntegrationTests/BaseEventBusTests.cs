@@ -5,13 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventBus.IntegrationTests;
 using EventBus.IntegrationTests.Events;
-using Finaps.EventBus.AzureServiceBus;
-using Finaps.EventBus.AzureServiceBus.DependencyInjection;
 using Finaps.EventBus.Core.Abstractions;
-using Finaps.EventBus.InMemory.DependencyInjection;
+using Finaps.EventBus.Core.DependencyInjection;
 using Finaps.EventBus.IntegrationTests.Events;
-using Finaps.EventBus.RabbitMQ;
-using Finaps.EventBus.RabbitMQ.DependencyInjection;
+using Finaps.EventBus.RabbitMq.Configuration;
+using Finaps.EventBus.RabbitMq.Extensions;
+using Finaps.EventBus.AzureServiceBus.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -54,38 +53,43 @@ namespace Finaps.EventBus.IntegrationTests
 
     private static IEventBus SetupEventBus(ServiceCollection services, EventBusType eventBusType)
     {
-
       switch (eventBusType)
       {
         case EventBusType.RabbitMQ:
-          services.AddRabbitMQ(new RabbitMQOptions()
+          services.ConfigureRabbitMq(config =>
           {
-            ExchangeName = "Exchange",
-            QueueName = "IntegrationTests",
-            UserName = "guest",
-            Password = "guest"
+            config.Options = new RabbitMqOptions
+            {
+              ExchangeName = "Exchange",
+              QueueName = "IntegrationTests",
+              UserName = "guest",
+              Password = "guest"
+            };
+            SetupSubscriptions(config);
           });
-          break;
-        case EventBusType.In_Memory:
-          services.AddInMemoryEventBus();
           break;
         case EventBusType.Azure:
-          services.AddAzureServiceBus(new AzureServiceBusOptions()
+          services.ConfigureAzureServiceBus(config =>
           {
-            SubscriptionName = "IntegrationTest",
-            ConnectionString = "Endpoint=sb://finaps-bus.servicebus.windows.net/;SharedAccessKeyName=IntegrationTest;SharedAccessKey=x55a0K04JdGS+5/uFNTw99raxFFUY5T7iq2UFBbZbBg=;EntityPath=test"
+            config.Options.ConnectionString = "Endpoint=sb://finaps-bus.servicebus.windows.net/;SharedAccessKeyName=IntegrationTest;SharedAccessKey=x55a0K04JdGS+5/uFNTw99raxFFUY5T7iq2UFBbZbBg=;EntityPath=test";
+            config.Options.SubscriptionName = "IntegrationTest";
+            config.Options.TopicName = "topic";
+            SetupSubscriptions(config);
           });
           break;
-
       }
 
 
       var serviceProvider = new DefaultServiceProviderFactory().CreateServiceProvider(services);
       var eventBus = serviceProvider.GetRequiredService<IEventBus>();
-      eventBus.Subscribe<EventPublisherEvent, EventPublisherEventHandler>();
-      eventBus.Subscribe<SubscriptionTestEvent, SubscriptionTestEventHandler>();
-      eventBus.Subscribe<CheckConcurrencyEvent, CheckConcurrencyEventHandler>();
       return eventBus;
+    }
+
+    protected static void SetupSubscriptions(BaseEventBusConfiguration config)
+    {
+      config.AddSubscription<EventPublisherEvent, EventPublisherEventHandler>();
+      config.AddSubscription<SubscriptionTestEvent, SubscriptionTestEventHandler>();
+      config.AddSubscription<CheckConcurrencyEvent, CheckConcurrencyEventHandler>();
     }
 
     protected SubscriptionTestEvent PublishSubscriptionTestEvent()
@@ -94,13 +98,13 @@ namespace Finaps.EventBus.IntegrationTests
       {
         TestString = "test"
       };
-      eventBus.Publish(subscriptionTestEvent);
+      eventBus.PublishAsync(subscriptionTestEvent);
       return subscriptionTestEvent;
     }
     public void Dispose()
     {
       autoResetEvent.Dispose();
-      eventBus.Dispose();
+      eventBus.DisposeAsync();
     }
 
     [Fact]
@@ -120,7 +124,7 @@ namespace Finaps.EventBus.IntegrationTests
     public void CanPublishWhileReceiving()
     {
       var eventPublisherEvent = new EventPublisherEvent();
-      eventBus.Publish(eventPublisherEvent);
+      eventBus.PublishAsync(eventPublisherEvent);
       var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
       Assert.True(eventReceived);
       Assert.NotEmpty(eventReceivedNotifier.Events);
@@ -146,7 +150,7 @@ namespace Finaps.EventBus.IntegrationTests
     {
       for (int i = 0; i < 10; i++)
       {
-        eventBus.Publish(new CheckConcurrencyEvent());
+        eventBus.PublishAsync(new CheckConcurrencyEvent());
       }
       await Task.Delay(1000);
       Assert.Equal(10, integerIncrementer.TimesIncremented);

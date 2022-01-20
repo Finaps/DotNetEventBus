@@ -1,4 +1,4 @@
-using Finaps.EventBus.Core.Events;
+using Finaps.EventBus.Core.Models;
 
 namespace Finaps.EventBus.IntegrationTests
 {

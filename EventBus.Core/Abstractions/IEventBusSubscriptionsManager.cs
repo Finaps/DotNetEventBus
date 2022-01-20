@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Finaps.EventBus.Core.Abstractions;
-using Finaps.EventBus.Core.Events;
+using Finaps.EventBus.Core.Models;
 
 namespace Finaps.EventBus.Core
 {
@@ -13,12 +13,14 @@ namespace Finaps.EventBus.Core
        where T : IntegrationEvent
        where TH : IIntegrationEventHandler<T>;
 
+    void AddSubscription(EventSubscription subscription);
+
     bool HasSubscriptionsForEvent<T>() where T : IntegrationEvent;
     bool HasSubscriptionsForEvent(string eventName);
     Type GetEventTypeByName(string eventName);
     void Clear();
     IEnumerable<Type> GetHandlersForEvent<T>() where T : IntegrationEvent;
     IEnumerable<Type> GetHandlersForEvent(string eventName);
-    string GetEventKey<T>();
+    IEnumerable<string> GetSubscriptions();
   }
 }
