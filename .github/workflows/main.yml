@@ -1,0 +1,22 @@
+name: DotnetEventBus
+
+on:
+  push:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v1
+      - name: setup dotnet core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '6.0'
+      - run: dotnet build
+      - run: dotnet test
+          
