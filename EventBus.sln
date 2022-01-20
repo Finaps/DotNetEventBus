@@ -15,8 +15,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBus.UnitTests", "Event
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBus.IntegrationTests", "EventBus.IntegrationTests\EventBus.IntegrationTests.csproj", "{FF4842A1-1B06-4E47-93B7-2D3E0F2A405D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBus.InMemory", "EventBus.InMemory\EventBus.InMemory.csproj", "{AC016157-F02F-42B1-917F-5C8739082323}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
