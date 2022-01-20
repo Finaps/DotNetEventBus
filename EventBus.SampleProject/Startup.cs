@@ -1,22 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using EventBus.SampleProject.Configuration;
+﻿using EventBus.SampleProject.Configuration;
 using EventBus.SampleProject.Events;
-using Finaps.EventBus.AzureServiceBus;
-using Finaps.EventBus.AzureServiceBus.DependencyInjection;
-using Finaps.EventBus.Core.DependencyInjection;
-using Finaps.EventBus.RabbitMQ;
-using Finaps.EventBus.RabbitMQ.DependencyInjection;
+using EventBus.SampleProject.Infrastructure.EventBus;
+using Finaps.EventBus.RabbitMq.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace EventBus.SampleProject
 {
@@ -32,7 +22,8 @@ namespace EventBus.SampleProject
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services)
     {
-      services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+      services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
+      services.AddControllers(options => options.EnableEndpointRouting = false);
       services.AddTransient<MessagePostedEventHandler>();
       services.AddTransient<MessagePutEventHandler>();
       services.AddScoped<ScopedDependency>();
@@ -40,25 +31,11 @@ namespace EventBus.SampleProject
       Configuration.GetSection("EventBus").Bind(eventBusConfiguration);
       if (eventBusConfiguration.UseRabbitMQ)
       {
-        var rabbitConfig = eventBusConfiguration.RabbitMQConfiguration;
-        services.AddRabbitMQ(new RabbitMQOptions()
-        {
-          HostName = rabbitConfig.Host,
-          UserName = rabbitConfig.UserName,
-          Password = rabbitConfig.Password,
-          VirtualHost = rabbitConfig.VirtualHost,
-          QueueName = rabbitConfig.QueueName,
-          ExchangeName = rabbitConfig.ExchangeName
-        });
+        services.ConfigureRabbitMq(Configuration);
       }
       else
       {
-        var azureConfig = eventBusConfiguration.AzureServiceBusConfiguration;
-        services.AddAzureServiceBus(new AzureServiceBusOptions()
-        {
-          SubscriptionName = azureConfig.ClientName,
-          ConnectionString = azureConfig.ConnectionString
-        });
+        services.ConfigureAzureServiceBus(Configuration);
       }
     }
 
@@ -77,8 +54,6 @@ namespace EventBus.SampleProject
 
       //app.UseHttpsRedirection();
       app.UseMvc();
-      app.AddEventHandler<MessagePostedEvent, MessagePostedEventHandler>();
-      app.AddEventHandler<MessagePutEvent, MessagePutEventHandler>();
     }
   }
 }

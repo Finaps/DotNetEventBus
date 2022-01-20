@@ -1,11 +1,12 @@
 using System;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Finaps.EventBus.Core.Abstractions;
-using Finaps.EventBus.Core.Events;
+using Finaps.EventBus.Core.Models;
+using Finaps.EventBus.Core.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace Finaps.EventBus.Core
 {
@@ -32,46 +33,44 @@ namespace Finaps.EventBus.Core
       _serviceProvider = serviceProvider;
       _logger = logger;
 
-      _subscriber.OnEventReceived += Event_Received;
+      _subscriber.OnEventReceived += OnEventReceived;
 
     }
 
-    public void Publish(IntegrationEvent @event)
+    public async Task PublishAsync(IntegrationEvent @event)
     {
-      // string eventName = GetEventKey(@event);
-      // var message = JsonConvert.SerializeObject(@event);
-      // var body = Encoding.UTF8.GetBytes(message);
-      _publisher.Publish(@event);
+      string messageId = @event.Id.ToString();
+      string message = JsonSerializer.Serialize(@event, @event.GetType());
+      string eventName = GetEventKey(@event);
+      await _publisher.PublishAsync(message, eventName, messageId);
     }
 
     private string GetEventKey(IntegrationEvent @event)
     {
-      return @event.GetType().Name;
+      return EventTypeUtilities.GetEventKey(@event.GetType());
     }
 
-    private string GetEventKey<T>() where T : IntegrationEvent
+    public void AddSubscription(EventSubscription subscription)
     {
-      return typeof(T).Name;
+      var eventName = EventTypeUtilities.GetEventKey(subscription.EventType);
+      _logger.LogInformation($"Add subscription for events of type {eventName}");
+      _subscriptionsManager.AddSubscription(subscription);
     }
 
-    public void Subscribe<T, TH>()
-      where T : IntegrationEvent
-      where TH : IIntegrationEventHandler<T>
+    public async Task StartConsumingAsync()
     {
-      var eventName = GetEventKey<T>();
-      SetupSubscription(eventName);
-      _subscriptionsManager.AddSubscription<T, TH>();
-    }
-
-    private void SetupSubscription(string eventName)
-    {
-      if (!_subscriptionsManager.HasSubscriptionsForEvent(eventName))
+      await _subscriber.InitializeAsync();
+      _logger.LogInformation($"Subscribing to events");
+      foreach (var eventName in _subscriptionsManager.GetSubscriptions())
       {
-        _subscriber.Subscribe(eventName);
+        await _subscriber.SubscribeAsync(eventName);
       }
+      _logger.LogInformation("Starting consumption of integration events");
+      await _subscriber.StartConsumingAsync();
     }
 
-    private async Task Event_Received(object sender, IntegrationEventReceivedArgs eventArgs)
+
+    private async Task OnEventReceived(object sender, IntegrationEventReceivedArgs eventArgs)
     {
       string eventName = eventArgs.EventName;
       string message = eventArgs.Message;
@@ -85,19 +84,16 @@ namespace Finaps.EventBus.Core
 
       if (_subscriptionsManager.HasSubscriptionsForEvent(eventName))
       {
-        using (var scope = _serviceProvider.CreateScope())
+        using var scope = _serviceProvider.CreateScope();
+        var handlerTypes = _subscriptionsManager.GetHandlersForEvent(eventName);
+        foreach (var type in handlerTypes)
         {
-          var handlerTypes = _subscriptionsManager.GetHandlersForEvent(eventName);
-          foreach (var type in handlerTypes)
-          {
-            var handler = scope.ServiceProvider.GetService(type) as IIntegrationEventHandler;
-            var eventType = _subscriptionsManager.GetEventTypeByName(eventName);
-            var integrationEvent = JsonConvert.DeserializeObject(message, eventType);
-            var concreteType = typeof(IIntegrationEventHandler<>).MakeGenericType(eventType);
-            await (Task)concreteType.GetMethod("Handle").Invoke(handler, new object[] { integrationEvent });
-          }
+          var handler = scope.ServiceProvider.GetService(type) as IIntegrationEventHandler;
+          var eventType = _subscriptionsManager.GetEventTypeByName(eventName);
+          var integrationEvent = JsonSerializer.Deserialize(message, eventType);
+          var concreteType = typeof(IIntegrationEventHandler<>).MakeGenericType(eventType);
+          await (Task)concreteType.GetMethod("Handle").Invoke(handler, new object[] { integrationEvent });
         }
-
       }
       else
       {
@@ -105,23 +101,24 @@ namespace Finaps.EventBus.Core
       }
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
       if (_disposed) return;
-
+      _logger.LogTrace($"Disposing {this.GetType().Name}");
       _disposed = true;
 
-      _subscriber.OnEventReceived -= Event_Received;
+      _subscriber.OnEventReceived -= OnEventReceived;
 
       try
       {
-        _publisher.Dispose();
-        _subscriber.Dispose();
+        await _publisher.DisposeAsync();
+        await _subscriber.DisposeAsync();
       }
       catch (IOException ex)
       {
         _logger.LogCritical(ex.ToString());
       }
+      _logger.LogTrace($"{this.GetType().Name} disposed");
     }
   }
 }

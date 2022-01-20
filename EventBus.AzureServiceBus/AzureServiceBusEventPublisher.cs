@@ -1,49 +1,59 @@
-﻿using Finaps.EventBus.Core.Abstractions;
-using Finaps.EventBus.Core.Events;
-using Microsoft.Azure.ServiceBus;
+﻿using System;
+using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
+using Finaps.EventBus.AzureServiceBus.Configuration;
+using Finaps.EventBus.Core.Abstractions;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using System;
-using System.Text;
-
 namespace Finaps.EventBus.AzureServiceBus
 {
 
-  public class AzureServiceBusEventPublisher : IEventPublisher
+  internal class AzureServiceBusEventPublisher : IEventPublisher
   {
-    private readonly IServiceBusPersistentConnection _serviceBusPersisterConnection;
+    private readonly ServiceBusSender _sender;
+    private readonly ServiceBusClient _client;
     private readonly ILogger<AzureServiceBusEventPublisher> _logger;
+    private bool _disposed;
 
-    public AzureServiceBusEventPublisher(IServiceBusPersistentConnection serviceBusPersisterConnection,
-        ILogger<AzureServiceBusEventPublisher> logger)
+    internal AzureServiceBusEventPublisher(ServiceBusClient client,
+      AzureServiceBusOptions options,
+      ILogger<AzureServiceBusEventPublisher> logger)
     {
-      _serviceBusPersisterConnection = serviceBusPersisterConnection;
+      if (options == null) throw new ArgumentNullException(nameof(options));
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+      _client = client ?? throw new ArgumentNullException(nameof(client));
+      _sender = _client.CreateSender(options.TopicName);
+      _logger.LogDebug($"Initialized Azure Service Bus Sender with topic name {options.TopicName}");
     }
 
-    public void Publish(IntegrationEvent @event)
+    public async Task PublishAsync(string body, string eventName, string messageId)
     {
-      var eventName = @event.GetType().Name;
-      var jsonMessage = JsonConvert.SerializeObject(@event);
-      var body = Encoding.UTF8.GetBytes(jsonMessage);
+      _logger.LogTrace($"Publishing message to Azure Service Bus.\nBody: {body}\nEvent Name: {eventName}\nMessage Id: {messageId}");
+      if (body == null) throw new ArgumentNullException(nameof(body));
+      if (eventName == null) throw new ArgumentNullException(nameof(eventName));
+      if (messageId == null) throw new ArgumentNullException(nameof(messageId));
 
-      var message = new Message
+      var message = new ServiceBusMessage(body)
       {
-        MessageId = Guid.NewGuid().ToString(),
-        Body = body,
-        Label = eventName,
+        MessageId = messageId,
+        Subject = eventName
       };
 
-      var topicClient = _serviceBusPersisterConnection.CreateModel();
-
-      topicClient.SendAsync(message)
-          .GetAwaiter()
-          .GetResult();
+      // Do not await call to increase throughput considerably
+      _sender.SendMessageAsync(message).ContinueWith(t =>
+      {
+        if (t.IsFaulted)
+        {
+          _logger.LogError(t.Exception, $"Sending message to Azure Service bus failed.\nEvent Type: {eventName}\nReason: {t.Exception.Message}");
+        }
+      });
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-      _serviceBusPersisterConnection.Dispose();
+      if (_disposed) return;
+      _disposed = true;
+      await _sender.DisposeAsync();
+      await _client.DisposeAsync();
     }
   }
 }

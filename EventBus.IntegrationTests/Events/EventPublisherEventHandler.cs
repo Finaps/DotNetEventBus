@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using Finaps.EventBus.Core.Abstractions;
-using Finaps.EventBus.Core.Events;
 
 namespace Finaps.EventBus.IntegrationTests.Events
 {
@@ -14,8 +13,7 @@ namespace Finaps.EventBus.IntegrationTests.Events
     public Task Handle(EventPublisherEvent @event)
     {
       var publishEvent = new SubscriptionTestEvent();
-      _eventBus.Publish(publishEvent);
-      return Task.CompletedTask;
+      return _eventBus.PublishAsync(publishEvent);
     }
 
 

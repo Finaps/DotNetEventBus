@@ -2,14 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Finaps.EventBus.Core.Abstractions;
-using Finaps.EventBus.Core.Events;
+using Finaps.EventBus.Core.Models;
+using Finaps.EventBus.Core.Utilities;
 
 namespace Finaps.EventBus.Core
 {
-  public partial class InMemoryEventBusSubscriptionsManager : IEventBusSubscriptionsManager
+  public class InMemoryEventBusSubscriptionsManager : IEventBusSubscriptionsManager
   {
-
-
     private readonly Dictionary<string, List<Type>> _handlers;
     private readonly List<Type> _eventTypes;
 
@@ -26,13 +25,26 @@ namespace Finaps.EventBus.Core
         where T : IntegrationEvent
         where TH : IIntegrationEventHandler<T>
     {
-      var eventName = GetEventKey<T>();
+      var eventName = EventTypeUtilities.GetEventKey<T>();
 
       DoAddSubscription(typeof(TH), eventName);
 
       if (!_eventTypes.Contains(typeof(T)))
       {
         _eventTypes.Add(typeof(T));
+      }
+    }
+
+    public void AddSubscription(EventSubscription subscription)
+    {
+
+      var eventName = EventTypeUtilities.GetEventKey(subscription.EventType);
+
+      DoAddSubscription(subscription.HandlerType, eventName);
+
+      if (!_eventTypes.Contains(subscription.EventType))
+      {
+        _eventTypes.Add(subscription.EventType);
       }
     }
 
@@ -55,23 +67,23 @@ namespace Finaps.EventBus.Core
 
     public IEnumerable<Type> GetHandlersForEvent<T>() where T : IntegrationEvent
     {
-      var key = GetEventKey<T>();
+      var key = EventTypeUtilities.GetEventKey<T>();
       return GetHandlersForEvent(key);
     }
     public IEnumerable<Type> GetHandlersForEvent(string eventName) => _handlers[eventName];
 
     public bool HasSubscriptionsForEvent<T>() where T : IntegrationEvent
     {
-      var key = GetEventKey<T>();
+      var key = EventTypeUtilities.GetEventKey<T>();
       return HasSubscriptionsForEvent(key);
     }
     public bool HasSubscriptionsForEvent(string eventName) => _handlers.ContainsKey(eventName);
 
     public Type GetEventTypeByName(string eventName) => _eventTypes.SingleOrDefault(t => t.Name == eventName);
 
-    public string GetEventKey<T>()
+    public IEnumerable<string> GetSubscriptions()
     {
-      return typeof(T).Name;
+      return _eventTypes.Select(type => type.Name);
     }
   }
 }

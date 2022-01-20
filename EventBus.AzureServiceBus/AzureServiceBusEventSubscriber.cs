@@ -1,104 +1,153 @@
-﻿using Finaps.EventBus.Core;
-using Finaps.EventBus.Core.Abstractions;
-using Microsoft.Azure.ServiceBus;
-using Microsoft.Extensions.Logging;
+﻿
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus.Administration;
+using Finaps.EventBus.AzureServiceBus.Configuration;
+using Finaps.EventBus.Core;
+using Finaps.EventBus.Core.Abstractions;
+using Finaps.EventBus.Core.Utilities;
+using Microsoft.Extensions.Logging;
 
 namespace Finaps.EventBus.AzureServiceBus
 {
-  public class AzureServiceBusEventSubscriber : IEventSubscriber
+
+  internal class AzureServiceBusEventSubscriber : IEventSubscriber
   {
-    private readonly IServiceBusPersistentConnection _serviceBusPersisterConnection;
+    private bool _disposed;
+    private bool _initialized;
+    private List<RuleProperties> _rules = new List<RuleProperties>();
+    private ServiceBusProcessor _processor;
+    private readonly ServiceBusClient _client;
+    private readonly ServiceBusAdministrationClient _administrationClient;
+    private readonly AzureServiceBusOptions _options;
     private readonly ILogger<AzureServiceBusEventSubscriber> _logger;
-    private readonly SubscriptionClient _subscriptionClient;
+
     public event AsyncEventHandler<IntegrationEventReceivedArgs> OnEventReceived;
 
-    public AzureServiceBusEventSubscriber(IServiceBusPersistentConnection serviceBusPersisterConnection,
-        ILogger<AzureServiceBusEventSubscriber> logger, string subscriptionClientName)
+    internal AzureServiceBusEventSubscriber(ServiceBusClient client,
+      ServiceBusAdministrationClient administrationClient,
+      AzureServiceBusOptions options,
+      ILogger<AzureServiceBusEventSubscriber> logger)
     {
-      _serviceBusPersisterConnection = serviceBusPersisterConnection;
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-      _subscriptionClient = new SubscriptionClient(serviceBusPersisterConnection.ServiceBusConnectionStringBuilder,
-          subscriptionClientName);
-
-      RemoveDefaultRule();
-      RegisterSubscriptionClientMessageHandler();
+      _client = client ?? throw new ArgumentNullException(nameof(client));
+      _administrationClient = administrationClient ?? throw new ArgumentNullException(nameof(administrationClient));
+      _options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
-    public void Subscribe(string eventName)
+    public async Task InitializeAsync()
     {
-      try
-      {
-        if (_subscriptionClient.GetRulesAsync().GetAwaiter().GetResult().Any(rule => rule.Name == eventName))
-        {
-          _logger.LogWarning("The messaging entity {eventName} already exists.", eventName);
-          return;
-        }
+      if (_initialized) throw new InvalidOperationException("Subscriber has already been initialized");
+      await CreateSubscription();
+      await CollectExistingRules();
+      _initialized = true;
+    }
 
-        _subscriptionClient.AddRuleAsync(new RuleDescription
-        {
-          Filter = new CorrelationFilter { Label = eventName },
-          Name = eventName
-        }).GetAwaiter().GetResult();
-      }
-      catch (ServiceBusException)
+    private async Task CollectExistingRules()
+    {
+      await foreach (var rulePage in _administrationClient.GetRulesAsync(_options.TopicName, _options.SubscriptionName).AsPages())
       {
-        _logger.LogWarning("The messaging entity {eventName} already exists.", eventName);
+        _rules.AddRange(rulePage.Values);
       }
+    }
 
+    private async Task CreateSubscription()
+    {
+      await CreateSubscriptionIfNotExists();
+      await RemoveDefaultRule();
+    }
+
+    private async Task CreateSubscriptionIfNotExists()
+    {
+      if (!await _administrationClient.SubscriptionExistsAsync(_options.TopicName, _options.SubscriptionName))
+      {
+        await _administrationClient.CreateSubscriptionAsync(_options.TopicName, _options.SubscriptionName);
+      }
+    }
+
+    public async Task SubscribeAsync(string eventName)
+    {
+      if (!_initialized) throw new InvalidOperationException("Subscriber has not been initialized");
       _logger.LogInformation("Subscribing to event {EventName}", eventName);
-    }
-
-    public void Dispose()
-    {
-      _serviceBusPersisterConnection.Dispose();
-      _subscriptionClient.CloseAsync();
-    }
-
-    private void RegisterSubscriptionClientMessageHandler()
-    {
-      _subscriptionClient.RegisterMessageHandler(
-        async (message, token) =>
+      if (_rules.Any(r => r.Name == eventName)) return;
+      if (!await _administrationClient.RuleExistsAsync(_options.TopicName, _options.SubscriptionName, eventName))
+      {
+        var rule = new CreateRuleOptions(eventName, new CorrelationRuleFilter()
         {
-          var eventName = $"{message.Label}";
-          var messageData = Encoding.UTF8.GetString(message.Body);
-          var integrationEventReceivedArgs = new IntegrationEventReceivedArgs()
-          {
-            EventName = eventName,
-            Message = messageData
-          };
-          await Task.Run(async () => await (OnEventReceived?.Invoke(this, integrationEventReceivedArgs) ?? Task.CompletedTask));
-          await _subscriptionClient.CompleteAsync(message.SystemProperties.LockToken);
-        },
-        new MessageHandlerOptions(ExceptionReceivedHandler) { MaxConcurrentCalls = 10, AutoComplete = false });
+          Subject = eventName
+        });
+        await _administrationClient.CreateRuleAsync(_options.TopicName, _options.SubscriptionName, rule);
+      }
     }
 
-    private Task ExceptionReceivedHandler(ExceptionReceivedEventArgs exceptionReceivedEventArgs)
+    public async Task StartConsumingAsync()
     {
-      var ex = exceptionReceivedEventArgs.Exception;
-      var context = exceptionReceivedEventArgs.ExceptionReceivedContext;
+      if (!_initialized) throw new InvalidOperationException("Subscriber has not been initialized");
+      _processor = _client.CreateProcessor(_options.TopicName, _options.SubscriptionName, new ServiceBusProcessorOptions()
+      {
+        PrefetchCount = 250,
+        AutoCompleteMessages = false
+      });
+      _processor.ProcessMessageAsync += ProcessorOnProcessMessageAsync;
+      _processor.ProcessErrorAsync += ProcessorOnProcessErrorAsync;
+      await _processor.StartProcessingAsync();
+    }
 
-      _logger.LogError(ex, "ERROR handling message: {ExceptionMessage} - Context: {@ExceptionContext}", ex.Message, context);
+    private async Task ProcessorOnProcessMessageAsync(ProcessMessageEventArgs arg)
+    {
+      var message = arg.Message;
+      var eventName = message.Subject;
+      var body = message.Body.ToString();
+      var integrationEventReceivedArgs = new IntegrationEventReceivedArgs()
+      {
+        EventName = eventName,
+        Message = body
+      };
+      await (OnEventReceived?.Invoke(this, integrationEventReceivedArgs) ?? Task.CompletedTask);
+      // We do not await the Complete call because it drops our throughput considerably, and it does not need to be awaited.
+      arg.CompleteMessageAsync(message).ContinueWith(t =>
+      {
+        if (t.IsFaulted)
+        {
+          _logger.LogWarning(t.Exception, $"Completing message failed, might be handled twice.\nEvent Name: {eventName}\nBody: {body}");
+        }
+      });
+    }
+
+    private Task ProcessorOnProcessErrorAsync(ProcessErrorEventArgs arg)
+    {
+      var ex = arg.Exception;
+      var source = arg.ErrorSource;
+
+      _logger.LogError(ex, $"ERROR handling message: {ex.Message} - Source: {source}");
 
       return Task.CompletedTask;
     }
 
-    private void RemoveDefaultRule()
+    public async ValueTask DisposeAsync()
+    {
+      if (_disposed) return;
+      _disposed = true;
+      if (_processor != null) await _processor.DisposeAsync();
+      if (_client != null) await _client.DisposeAsync();
+    }
+
+    private async Task RemoveDefaultRule()
     {
       try
       {
-        _subscriptionClient
-         .RemoveRuleAsync(RuleDescription.DefaultRuleName)
-         .GetAwaiter()
-         .GetResult();
+        if (await _administrationClient.RuleExistsAsync(_options.TopicName, _options.SubscriptionName, CreateRuleOptions.DefaultRuleName))
+        {
+          await _administrationClient.DeleteRuleAsync(_options.TopicName, _options.SubscriptionName,
+            CreateRuleOptions.DefaultRuleName);
+        }
       }
-      catch (MessagingEntityNotFoundException)
+      catch (Exception ex)
       {
-        _logger.LogWarning("The messaging entity {DefaultRuleName} Could not be found.", RuleDescription.DefaultRuleName);
+        _logger.LogWarning(ex, "Error while removing default rule");
       }
     }
   }

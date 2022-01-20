@@ -3,6 +3,7 @@ using System.Linq;
 
 namespace EventBus.Core.Extensions
 {
+
   public static class GenericTypeExtensions
   {
     public static string GetGenericTypeName(this Type type)

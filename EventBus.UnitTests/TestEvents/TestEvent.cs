@@ -1,4 +1,6 @@
-using Finaps.EventBus.Core.Events;
+
+
+using Finaps.EventBus.Core.Models;
 
 namespace EventBus.Tests.TestEvents
 {
