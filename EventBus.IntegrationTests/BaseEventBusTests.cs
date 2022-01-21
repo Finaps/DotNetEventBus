@@ -11,22 +11,24 @@ using Finaps.EventBus.IntegrationTests.Events;
 using Finaps.EventBus.RabbitMq.Configuration;
 using Finaps.EventBus.RabbitMq.Extensions;
 using Finaps.EventBus.AzureServiceBus.Extensions;
+using Xunit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Xunit;
 
 namespace Finaps.EventBus.IntegrationTests
 {
-  public abstract class BaseEventBusTests : IDisposable
+  [Collection("Sequential")]
+  public class BaseEventBusTests : IDisposable
   {
     private static readonly int ConsumeTimeoutInMilliSeconds = 5000;
     protected EventReceivedNotifier eventReceivedNotifier;
     protected IntegerIncrementer integerIncrementer;
     protected AutoResetEvent autoResetEvent;
     protected IEventBus eventBus;
-    protected BaseEventBusTests(EventBusType eventBusType)
+    public BaseEventBusTests()
     {
+      var eventBusType = EventBusType.RabbitMQ;
       eventReceivedNotifier = new EventReceivedNotifier();
       integerIncrementer = new IntegerIncrementer();
       autoResetEvent = new AutoResetEvent(false);
@@ -43,6 +45,7 @@ namespace Finaps.EventBus.IntegrationTests
       var services = new ServiceCollection();
       services.AddSingleton<EventReceivedNotifier>(eventReceivedNotifier);
       services.AddSingleton<IntegerIncrementer>(integerIncrementer);
+      services.AddSingleton<EventBusStartup>();
       services.AddScoped<EventPublisherEventHandler>();
       services.AddScoped<SubscriptionTestEventHandler>();
       services.AddScoped<CheckConcurrencyEventHandler>();
@@ -60,10 +63,11 @@ namespace Finaps.EventBus.IntegrationTests
           {
             config.Options = new RabbitMqOptions
             {
-              ExchangeName = "Exchange",
-              QueueName = "IntegrationTests",
+              ExchangeName = "SampleProject",
+              QueueName = "SampleProject",
               UserName = "guest",
-              Password = "guest"
+              Password = "guest",
+              VirtualHost = "/"
             };
             SetupSubscriptions(config);
           });
@@ -81,6 +85,8 @@ namespace Finaps.EventBus.IntegrationTests
 
 
       var serviceProvider = new DefaultServiceProviderFactory().CreateServiceProvider(services);
+      var backgroundConsumer = serviceProvider.GetRequiredService<EventBusStartup>();
+      Task.Run(() => backgroundConsumer.StartAsync(CancellationToken.None)).Wait();
       var eventBus = serviceProvider.GetRequiredService<IEventBus>();
       return eventBus;
     }
@@ -101,6 +107,7 @@ namespace Finaps.EventBus.IntegrationTests
       eventBus.PublishAsync(subscriptionTestEvent);
       return subscriptionTestEvent;
     }
+
     public void Dispose()
     {
       autoResetEvent.Dispose();
@@ -150,10 +157,12 @@ namespace Finaps.EventBus.IntegrationTests
     {
       for (int i = 0; i < 10; i++)
       {
-        eventBus.PublishAsync(new CheckConcurrencyEvent());
+        await eventBus.PublishAsync(new CheckConcurrencyEvent());
       }
-      await Task.Delay(1000);
+      await Task.Delay(4000);
       Assert.Equal(10, integerIncrementer.TimesIncremented);
     }
+
+
   }
 }

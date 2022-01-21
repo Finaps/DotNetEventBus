@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Finaps.EventBus.Core.Abstractions;
+using System;
 
 namespace EventBus.IntegrationTests.Events
 {
