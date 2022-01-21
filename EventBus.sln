@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBus.UnitTests", "Event
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBus.IntegrationTests", "EventBus.IntegrationTests\EventBus.IntegrationTests.csproj", "{FF4842A1-1B06-4E47-93B7-2D3E0F2A405D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventBus.Kafka", "EventBus.Kafka\EventBus.Kafka.csproj", "{7223C276-A454-48C0-91B7-E83633F0D1D2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -112,5 +114,17 @@ Global
 		{AC016157-F02F-42B1-917F-5C8739082323}.Release|x64.Build.0 = Release|Any CPU
 		{AC016157-F02F-42B1-917F-5C8739082323}.Release|x86.ActiveCfg = Release|Any CPU
 		{AC016157-F02F-42B1-917F-5C8739082323}.Release|x86.Build.0 = Release|Any CPU
+		{7223C276-A454-48C0-91B7-E83633F0D1D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7223C276-A454-48C0-91B7-E83633F0D1D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7223C276-A454-48C0-91B7-E83633F0D1D2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7223C276-A454-48C0-91B7-E83633F0D1D2}.Debug|x64.Build.0 = Debug|Any CPU
+		{7223C276-A454-48C0-91B7-E83633F0D1D2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7223C276-A454-48C0-91B7-E83633F0D1D2}.Debug|x86.Build.0 = Debug|Any CPU
+		{7223C276-A454-48C0-91B7-E83633F0D1D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7223C276-A454-48C0-91B7-E83633F0D1D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7223C276-A454-48C0-91B7-E83633F0D1D2}.Release|x64.ActiveCfg = Release|Any CPU
+		{7223C276-A454-48C0-91B7-E83633F0D1D2}.Release|x64.Build.0 = Release|Any CPU
+		{7223C276-A454-48C0-91B7-E83633F0D1D2}.Release|x86.ActiveCfg = Release|Any CPU
+		{7223C276-A454-48C0-91B7-E83633F0D1D2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
