@@ -21,5 +21,5 @@ jobs:
            6.0.x
            3.1.x
       - run: dotnet build
-      - run: dotnet test
+      - run: dotnet test EventBus.UnitTests
           

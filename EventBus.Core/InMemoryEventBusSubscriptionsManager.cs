@@ -27,7 +27,7 @@ namespace Finaps.EventBus.Core
     {
       var eventName = EventTypeUtilities.GetEventKey<T>();
 
-      DoAddSubscription(typeof(TH), eventName);
+      Subscribe(typeof(TH), eventName);
 
       if (!_eventTypes.Contains(typeof(T)))
       {
@@ -40,7 +40,7 @@ namespace Finaps.EventBus.Core
 
       var eventName = EventTypeUtilities.GetEventKey(subscription.EventType);
 
-      DoAddSubscription(subscription.HandlerType, eventName);
+      Subscribe(subscription.HandlerType, eventName);
 
       if (!_eventTypes.Contains(subscription.EventType))
       {
@@ -48,7 +48,7 @@ namespace Finaps.EventBus.Core
       }
     }
 
-    private void DoAddSubscription(Type handlerType, string eventName)
+    private void Subscribe(Type handlerType, string eventName)
     {
       if (!HasSubscriptionsForEvent(eventName))
       {
