@@ -24,6 +24,9 @@ namespace Finaps.EventBus.Kafka
       BootstrapServers = "localhost:9094",
       AutoOffsetReset = AutoOffsetReset.Earliest
     };
+
+    public event AsyncEventHandler<IntegrationEventReceivedArgs> OnEventReceived;
+
     private IConsumer<Ignore, string> _consumer;
 
     internal KafkaEventSubscriber(
