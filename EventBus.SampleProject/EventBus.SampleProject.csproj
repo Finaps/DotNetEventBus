@@ -10,6 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../EventBus.Kafka/EventBus.Kafka.csproj"/>
     <ProjectReference Include="../EventBus.RabbitMQ/EventBus.RabbitMQ.csproj" />
     <ProjectReference Include="../EventBus.AzureServiceBus/EventBus.AzureServiceBus.csproj"/>
   </ItemGroup>

@@ -33,6 +33,10 @@ namespace EventBus.SampleProject
       {
         services.ConfigureRabbitMq(Configuration);
       }
+      else if(eventBusConfiguration.UseKafka)
+      {
+        services.ConfigureKafka(Configuration);
+      }
       else
       {
         services.ConfigureAzureServiceBus(Configuration);

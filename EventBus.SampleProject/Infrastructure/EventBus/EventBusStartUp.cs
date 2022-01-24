@@ -1,11 +1,12 @@
 using EventBus.SampleProject.Events;
 using Finaps.EventBus.Core.DependencyInjection;
 using Finaps.EventBus.RabbitMq.Configuration;
+using Finaps.EventBus.Kafka.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Finaps.EventBus.AzureServiceBus.Extensions;
 using Finaps.EventBus.RabbitMq.Extensions;
-
+using Finaps.EventBus.Kafka.Extensions;
 
 namespace EventBus.SampleProject.Infrastructure.EventBus
 {
@@ -52,6 +53,19 @@ namespace EventBus.SampleProject.Infrastructure.EventBus
     {
       config.AddSubscription<MessagePostedEvent, MessagePostedEventHandler>();
       config.AddSubscription<MessagePutEvent, MessagePutEventHandler>();
+    }
+
+    public static IServiceCollection ConfigureKafka(this IServiceCollection services, IConfiguration configuration)
+    {
+      var kafkaConfig = new KafkaOptions();
+      configuration.GetSection("Kafka").Bind(kafkaConfig);
+
+      services.ConfigureKafka(config =>
+      {
+        config.Options = kafkaConfig;
+        SetupSubscriptions(config);
+      });
+      return services;
     }
   }
 }
