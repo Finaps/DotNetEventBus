@@ -10,15 +10,30 @@ This package should be used in a ASP.NET Core application and uses the default M
 To use RabbitMQ, add the following to your `Startup.cs`:
 
 ```csharp
-services.AddRabbitMQ(new RabbitMQOptions()
+var rabbitConfig = new RabbitMqOptions();
+configuration.GetSection("Rabbit").Bind(rabbitConfig);
+
+services.ConfigureRabbitMq(config =>
 {
-  HostName = "Hostname of RabbitMQ Instance",
-  UserName = "RabbitMQ Username",
-  Password = "RabbitMQ Password",
-  VirtualHost = "RabbitMQ Virtual Host",
-  QueueName = "Queue name for this application",
-  ExchangeName = "Exchange name for the system"
+  config.Options = rabbitConfig;
+  config.AddSubscription<MessagePostedEvent, MessagePostedEventHandler>();
 });
+```
+
+Configuration options:
+
+```csharp
+  public class RabbitMqOptions
+  {
+    public string UserName { get; set; } = "guest";
+    public string Password { get; set; } = "guest";
+    public string VirtualHost { get; set; } = "/";
+    public string HostName { get; set; } = "localhost";
+    public int ConnectRetryCount { get; set; } = 10;
+    public string ExchangeName { get; set; } = "amq.direct";
+    public string QueueName { get; set; }
+    public ushort PrefetchCount { get; set; } = 300;
+  }
 ```
 
 This implementation uses just one direct exchange for all applications interacting with each other, so make sure the provided exchange name is the same for all applications.
@@ -29,11 +44,27 @@ Similarly, each application has a single queue linked to this exchange for liste
 To use Azure Service Bus, make sure you have created a topic in your service bus that all applications can publish and subscribe to, then create a subscription for each listening application. To connect your application, add the following code to your `Startup.cs`:
 
 ```csharp
-services.AddAzureServiceBus(new AzureServiceBusOptions()
-{
-  ConnectionString = "Connection string to a topic",
-  SubscriptionName = "Name of the subscription to topic"
-});
+  var azureConfig = configuration.GetSection(AzureServiceBusConfiguration.ConfigurationKey)
+  .Get<AzureServiceBusConfiguration>();
+
+  services.ConfigureAzureServiceBus(config =>
+  {
+    config.Options.ConnectionString = azureConfig.ConnectionString;
+    config.Options.SubscriptionName = azureConfig.SubscriptionName;
+    config.Options.TopicName = azureConfig.TopicName;
+    config.AddSubscription<MessagePostedEvent, MessagePostedEventHandler>();
+  });
+```
+
+Configuration options:
+
+```csharp
+  public class AzureServiceBusOptions
+  {
+    public string ConnectionString { get; set; }
+    public string TopicName { get; set; }
+    public string SubscriptionName { get; set; }
+  }
 ```
 
 ## Events
@@ -49,7 +80,7 @@ public class EntityCreatedEvent : IntegrationEvent
 
 ### Publishing
 
-If you want to publish events from a certain class, make sure an instance of `IEventBus` is injected into the object. To publish, create an instance of a class derived from `IntegrationEvent` and call the `Publish` method on the `IEventBus` instance. For example, to publish an event that an entity has been published from a controller:
+If you want to publish events from a certain class, make sure an instance of `IEventBus` is injected into the object. To publish, create an instance of a class derived from `IntegrationEvent` and call the `PublishAsync` method on the `IEventBus` instance. For example, to publish an event that an entity has been published from a controller:
 
 ```csharp
 public EntityController : ControllerBase {
@@ -61,7 +92,7 @@ public EntityController : ControllerBase {
   }
 
   [HttpPost]
-  public void Create([FromBody] Entity entity)
+  public async Task<ObjectResult> Create([FromBody] Entity entity)
   {
     //Entity creation logic
     //...
@@ -73,7 +104,8 @@ public EntityController : ControllerBase {
     };
 
     //Publish event
-    _eventBus.Publish(event);
+    _eventBus.PublishAsync(event);
+    return Ok("sent");
   }
 }
 ```
@@ -85,7 +117,7 @@ To handle a certain event in your application, create a class inheriting from th
 ```csharp
 public class EntityCreatedEventHandler : IIntegrationEventHandler<EntityCreatedEvent>
 {
-  public async Task Handle(EntityCreatedEvent @event)
+  public async Task  Handle(EntityCreatedEvent @event)
   {
     // Logic for handling event
   }
@@ -100,8 +132,18 @@ services.AddTransient<EntityCreatedEventHandler>();
 
 When constructing your Event Handler class, the service provider will also inject all its dependencies, so you can make use of your repositories, loggers etc. in your Handle method.
 
-Finally, to make your application listen to events of a certain type, add a call to `AddEventHandler` in the `Configure` method in your apps `Startup.cs`:
+Finally, to make your application listen to events of a certain type, add a call to `AddSubscription` in the `Configure` method in your eventBus configuration:
 
 ```csharp
-app.AddEventHandler<EntityCreatedEvent, EntityCreatedEventHandler>();
+  services.ConfigureAzureServiceBus(config =>
+  {
+    //configure
+    config.AddSubscription<MessagePostedEvent, MessagePostedEventHandler>(); //register event to handler
+  });
 ```
+
+## Do you have an issue?
+
+Try to see if the issue persists within the included sample project. 
+
+If you're still running into problems, feel free to file an issue.
