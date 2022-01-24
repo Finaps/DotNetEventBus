@@ -7,9 +7,14 @@ on:
       - main
 
 jobs:
-  build:
+  container-job:
     runs-on: ubuntu-latest
-
+    services:
+      rabbitmq:
+        image: rabbitmq:3-management-alpine
+        ports: 
+        - 15672:15672
+        - 5672:5672
     steps:
       - name: checkout
         uses: actions/checkout@v1
@@ -21,5 +26,5 @@ jobs:
            6.0.x
            3.1.x
       - run: dotnet build
-      - run: dotnet test EventBus.UnitTests
+      - run: dotnet test
           

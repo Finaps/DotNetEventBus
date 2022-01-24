@@ -1,6 +1,7 @@
 version: "3"
 services:
   rabbitmq:
+    container_name: rabbit
     image: rabbitmq:3-management-alpine
     ports:
       - "15672:15672"
