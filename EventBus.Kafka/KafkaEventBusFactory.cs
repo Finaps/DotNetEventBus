@@ -33,13 +33,13 @@ namespace Finaps.EventBus.Kafka
     private static KafkaEventPublisher CreatePublisher(KafkaOptions options, ILoggerFactory loggerFactory)
     {
       var logger = loggerFactory.CreateLogger<KafkaEventPublisher>();
-      return new KafkaEventPublisher(logger);
+      return new KafkaEventPublisher(logger, options);
     }
 
     private static KafkaEventSubscriber CreateSubscriber(KafkaOptions options, ILoggerFactory loggerFactory)
     {
       var logger = loggerFactory.CreateLogger<KafkaEventSubscriber>();
-      return new KafkaEventSubscriber(logger);
+      return new KafkaEventSubscriber(logger, options);
     }
   }
 }

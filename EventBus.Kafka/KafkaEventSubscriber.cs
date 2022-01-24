@@ -15,22 +15,25 @@ namespace Finaps.EventBus.Kafka
   {
     private bool _disposed;
     private readonly ILogger<KafkaEventSubscriber> _logger;
-    private readonly ConsumerConfig config = new ConsumerConfig
-    {
-      GroupId = "st_consumer_group",
-      BootstrapServers = "localhost:9094",
-      AutoOffsetReset = AutoOffsetReset.Earliest,
-    };
-
     public event AsyncEventHandler<IntegrationEventReceivedArgs>? OnEventReceived;
 
+    private KafkaOptions _options;
     private IConsumer<Ignore, string> _consumer;
 
     internal KafkaEventSubscriber(
-      ILogger<KafkaEventSubscriber> logger)
+      ILogger<KafkaEventSubscriber> logger,
+      KafkaOptions options)
     {
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-      _consumer = new ConsumerBuilder<Ignore, string>(config).Build();
+      _options = options;
+      _consumer = new ConsumerBuilder<Ignore, string>(
+        new ConsumerConfig
+        {
+          GroupId = options.GroupId,
+          BootstrapServers = options.Brokers,
+          AutoOffsetReset = AutoOffsetReset.Earliest,
+        }
+      ).Build();
     }
 
     public Task InitializeAsync()
@@ -40,34 +43,31 @@ namespace Finaps.EventBus.Kafka
 
     public Task SubscribeAsync(string eventName)
     {
-      _consumer.Subscribe("test");
+      _consumer.Subscribe(_options.TopicName);
       return Task.CompletedTask;
     }
 
     public Task StartConsumingAsync()
     {
-      // var cancelToken = new CancellationTokenSource();
-      // try
-      // {
-        //wrap 
-        Task.Run(() => {
+      Task.Run(async () => {
+        try
+        {
           while (true)
           {
-              Console.WriteLine($"Consuming...");
               var consumer = _consumer.Consume();
               Console.WriteLine($"Message: {consumer.Message.Value} received from {consumer.TopicPartitionOffset}");
           }
-        });
-        return Task.CompletedTask;
-      // }
-      // catch (Exception e)
-      // {
-      //     Console.WriteLine($"Something went wrong: {e}");
-      // }
-      // finally
-      // {
-      //   await DisposeAsync();
-      // }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Something went wrong: {e}");
+        }
+        finally
+        {
+          await DisposeAsync();
+        }
+      });
+      return Task.CompletedTask;
     }
 
     public ValueTask DisposeAsync()
