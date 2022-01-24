@@ -6,19 +6,20 @@ using Finaps.EventBus.Core.Abstractions;
 using Finaps.EventBus.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using EventBus.Kafka;
 
 namespace Finaps.EventBus.Kafka
 {
-  public static class KafkaEventBusFactory
+  public static class KafkaFactory
   {
-    public static IEventBus Create(IServiceProvider serviceProvider, List<EventSubscription> subscriptions, KafkaOptions options = null, ILoggerFactory loggerFactory = null)
+    public static IEventBus Create(IServiceProvider serviceProvider, List<EventSubscription> subscriptions, KafkaOptions? options = null, ILoggerFactory? loggerFactory = null)
     {
       loggerFactory ??= new NullLoggerFactory();
       options ??= new KafkaOptions();
 
       var subscriptionsManager = new InMemoryEventBusSubscriptionsManager();
       var publisher = CreatePublisher(options, loggerFactory);
-      var consumer = CreateConsumer(options, loggerFactory);
+      var consumer = CreateSubscriber(options, loggerFactory);
       var logger = loggerFactory.CreateLogger<IEventBus>();
       var eventBus = new KafkaEventBus(publisher, consumer, subscriptionsManager, serviceProvider, logger);
       foreach (var subscription in subscriptions)
@@ -32,13 +33,13 @@ namespace Finaps.EventBus.Kafka
     private static KafkaEventPublisher CreatePublisher(KafkaOptions options, ILoggerFactory loggerFactory)
     {
       var logger = loggerFactory.CreateLogger<KafkaEventPublisher>();
-      return new KafkaEventPublisher(options, logger);
+      return new KafkaEventPublisher(logger);
     }
 
     private static KafkaEventSubscriber CreateSubscriber(KafkaOptions options, ILoggerFactory loggerFactory)
     {
       var logger = loggerFactory.CreateLogger<KafkaEventSubscriber>();
-      return new KafkaEventSubscriber(options, logger);
+      return new KafkaEventSubscriber(logger);
     }
   }
 }

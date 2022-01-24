@@ -8,6 +8,10 @@
       "path": "EventBus.RabbitMQ"
     },
     {
+      "name": "Finaps.EventBus.Kafka",
+      "path": "EventBus.Kafka"
+    },
+    {
       "name": "Finaps.EventBus.AzureServiceBus",
       "path": "EventBus.AzureServiceBus"
     },

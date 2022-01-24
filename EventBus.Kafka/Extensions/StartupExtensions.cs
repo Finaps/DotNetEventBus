@@ -9,15 +9,15 @@ namespace Finaps.EventBus.Kafka.Extensions
 {
   public static class StartupExtensions
   {
-    public static IServiceCollection ConfigureKafkaServiceBus(this IServiceCollection services, Action<KafkaServiceBusEventBusConfiguration> builder)
+    public static IServiceCollection ConfigureKafka(this IServiceCollection services, Action<KafkaConfiguration> builder)
     {
-      var config = new KafkaServiceBusEventBusConfiguration();
+      var config = new KafkaConfiguration();
       builder(config);
 
       services.AddSingleton<IEventBus>(sp =>
       {
         var loggerFactory = sp.GetService<ILoggerFactory>();
-        return KafkaEventBusFactory.Create(sp, config.Subscriptions, config.Options, loggerFactory);
+        return KafkaFactory.Create(sp, config.Subscriptions, config.Options, loggerFactory);
       });
       services.AddHostedService<EventBusStartup>();
       return services;
