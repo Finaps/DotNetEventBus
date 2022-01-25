@@ -1,8 +1,6 @@
-namespace Finaps.EventBus.IntegrationTests
+namespace Finaps.EventBus.IntegrationTests;
+public enum EventBusType
 {
-  public enum EventBusType
-  {
-    RabbitMQ,
-    Azure
-  }
+  RabbitMQ,
+  Azure
 }

@@ -1,10 +1,6 @@
-
 using Finaps.EventBus.Core.Models;
-
-namespace Finaps.EventBus.IntegrationTests.Events
+namespace Finaps.EventBus.IntegrationTests.Events;
+public class SubscriptionTestEvent : IntegrationEvent
 {
-  public class SubscriptionTestEvent : IntegrationEvent
-  {
-    public string TestString { get; set; }
-  }
+  public string TestString { get; set; }
 }

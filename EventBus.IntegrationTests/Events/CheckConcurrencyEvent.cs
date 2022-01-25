@@ -1,10 +1,8 @@
 
 using Finaps.EventBus.Core.Models;
+namespace EventBus.IntegrationTests.Events;
 
-namespace EventBus.IntegrationTests.Events
+public class CheckConcurrencyEvent : IntegrationEvent
 {
-  public class CheckConcurrencyEvent : IntegrationEvent
-  {
 
-  }
 }
