@@ -2,6 +2,8 @@
 using Finaps.EventBus.Core.Abstractions;
 using Finaps.EventBus.Kafka.Configuration;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace EventBus.Kafka
@@ -11,7 +13,7 @@ namespace EventBus.Kafka
     // private bool _disposed;
     private readonly ILogger<KafkaEventPublisher> _logger;
     private KafkaOptions _options;
-    private IProducer<Null, string> _producer;
+    private IProducer<int, string> _producer;
     internal KafkaEventPublisher(
       ILogger<KafkaEventPublisher> logger,
       KafkaOptions options
@@ -19,21 +21,24 @@ namespace EventBus.Kafka
     {
       _logger = logger;
       _options = options;
-      _producer = new ProducerBuilder<Null, string>(
+      _producer = new ProducerBuilder<int, string>(
         new ProducerConfig{ BootstrapServers = options.Brokers }
       ).Build(); //Todo Get it from pool here
     }
     public void Publish(string message, string eventName, string messageId)
     {
-      _producer.Produce(_options.TopicName, CreateMessage(message));
+      _producer.Produce("test", CreateMessage(message, eventName));
     }
     public Task PublishAsync(string message, string eventName, string messageId)
     {
-      return _producer.ProduceAsync(_options.TopicName, CreateMessage(message));
+      return _producer.ProduceAsync("test", CreateMessage(message, eventName));
     }
-    private Message<Null, string> CreateMessage(string message)
+    private Message<int, string> CreateMessage(string message, string eventName)
     {
-      return new Message<Null, string> { Value = message };
+      var headers = new Headers();
+      headers.Add("eventName", Encoding.ASCII.GetBytes(eventName) );
+      var key = new Random().Next(9999);
+      return new Message<int, string> { Headers = headers, Key=key, Value = message };
     }
 
     public ValueTask DisposeAsync()
