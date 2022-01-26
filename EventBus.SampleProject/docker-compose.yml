@@ -1,0 +1,43 @@
+version: "3.4"
+
+services:
+  kafka:
+    image: wurstmeister/kafka:${KAFKA_VERSION:-latest}
+    hostname: kafka1
+    restart: always
+    depends_on:
+      - zookeeper
+    ports:
+      - target: 9094
+        published: 9094
+        protocol: tcp
+        mode: host
+    environment:
+      KAFKA_CREATE_TOPICS: "test:1:1:compact"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://localhost:9094
+      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_BROKER_ID: 1
+    volumes:
+      - type: volume
+        source: kafka-volume
+        target: /kafka
+  zookeeper:
+    image: wurstmeister/zookeeper
+    restart: always
+    ports:
+      - "2181:2181"
+    volumes:
+      - type: volume
+        source: zookeeper-volume-conf
+        target: /opt/zookeeper-3.4.13/conf
+      - type: volume
+        source: zookeeper-volume-data
+        target: /opt/zookeeper-3.4.13/data
+
+volumes:
+  kafka-volume:
+  zookeeper-volume-conf:
+  zookeeper-volume-data:

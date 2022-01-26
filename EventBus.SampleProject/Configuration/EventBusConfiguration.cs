@@ -25,13 +25,11 @@ namespace EventBus.SampleProject.Configuration
     public string ClientName { get; set; }
   }
 
-    public class KafkaConfiguration
+  public class KafkaConfiguration
   {
     public string Brokers { get; set; }
-    public string TopicName { get; set; }
+    public string[] TopicNames { get; set; }
     public string GroupId { get; set; }
-    public string AutoOffsetReset { get; set; }
-    public string SubscriptionName { get; set; }
   }
 
 }
