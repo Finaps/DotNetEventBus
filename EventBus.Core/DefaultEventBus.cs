@@ -72,8 +72,8 @@ namespace Finaps.EventBus.Core
 
     private async Task OnEventReceived(object sender, IntegrationEventReceivedArgs eventArgs)
     {
-      string eventName = eventArgs.EventName;
-      string message = eventArgs.Message;
+      string eventName = eventArgs.EventName ??= "";
+      string message = eventArgs.Message ??= "";
 
       await ProcessEvent(eventName, message);
     }
