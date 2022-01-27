@@ -37,9 +37,8 @@ namespace Finaps.EventBus.Kafka
         }
       ).Build();
 
-      //TODO find out how to subscribe to multiple topics in this setup
-      _consumer.Subscribe(new string[] {"test"});
-      // _consumer.Subscribe("test");
+      //TODO: Make sure all topics exist, error if trying to subscribe to topic thats not
+      _consumer.Subscribe(options.TopicNames);
     }
 
     public Task InitializeAsync()
@@ -59,26 +58,9 @@ namespace Finaps.EventBus.Kafka
         {
           while (true)
           {
-              Console.WriteLine("consuming...");
-              Console.WriteLine(_consumer.Subscription[0]);
               var consumer = _consumer.Consume();
-
               _logger.LogDebug($"Message: {consumer.Message.Value} received from {consumer.TopicPartitionOffset}");
-              Console.WriteLine("test");
-
-              var bytes = consumer.Message.Headers[0].GetValueBytes();
-
-              var integrationEventReceivedArgs = new IntegrationEventReceivedArgs()
-              {
-                EventName = Encoding.UTF8.GetString(bytes, 0, bytes.Length),
-                Message = consumer.Message.Value
-              };
-
-              if (OnEventReceived != null){
-                await Task.Run(async () => {
-                  await OnEventReceived.Invoke(this, integrationEventReceivedArgs);
-                });
-              }
+              await OnMessageReceived(consumer);
           }
         }
         catch (Exception e)
@@ -91,6 +73,23 @@ namespace Finaps.EventBus.Kafka
         }
       });
       return Task.CompletedTask;
+    }
+
+    public async Task OnMessageReceived(ConsumeResult<Ignore, string> consumer)
+    {
+      var bytes = consumer.Message.Headers[0].GetValueBytes();
+
+      var integrationEventReceivedArgs = new IntegrationEventReceivedArgs()
+      {
+        EventName = Encoding.UTF8.GetString(bytes, 0, bytes.Length),
+        Message = consumer.Message.Value
+      };
+
+      if (OnEventReceived != null){
+        await Task.Run(async () => {
+          await OnEventReceived.Invoke(this, integrationEventReceivedArgs);
+        });
+      }
     }
 
     public ValueTask DisposeAsync()
