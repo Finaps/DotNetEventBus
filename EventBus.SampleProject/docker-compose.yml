@@ -13,7 +13,7 @@ services:
         protocol: tcp
         mode: host
     environment:
-      KAFKA_CREATE_TOPICS: "test:1:1:compact"
+      KAFKA_CREATE_TOPICS: "test:1:1:compact,test2:1:1:compact"
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://localhost:9094
