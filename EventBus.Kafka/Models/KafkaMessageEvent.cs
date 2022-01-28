@@ -4,7 +4,7 @@ namespace Finaps.EventBus.Kafka.Models
 {
   public class KafkaMessageEvent : IntegrationEvent
   {
-    public string Message { get; set; }
-    public string Topic { get; set; }
+    public string? Message { get; set; }
+    public string? Topic { get; set; }
   }
 }

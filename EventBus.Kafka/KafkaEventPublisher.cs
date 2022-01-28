@@ -13,7 +13,6 @@ namespace EventBus.Kafka
 {
   public class KafkaEventPublisher : IEventPublisher
   {
-    // private bool _disposed;
     private readonly ILogger<KafkaEventPublisher> _logger;
     private KafkaOptions _options;
     private ObjectPool<IProducer<int, string>> _channelPool;
@@ -47,16 +46,15 @@ namespace EventBus.Kafka
     public string GetTopicFromKafkaMessage(string message)
     {
       var kafkaMessage = JsonSerializer.Deserialize<KafkaMessageEvent>(message);
-      string topic;
-      if(kafkaMessage != null){
-        topic = kafkaMessage.Topic;
-      }
-      else{
+      if(kafkaMessage == null){
         throw new Exception("Invalid kafka message format");
       }
+
+      string? topic = kafkaMessage.Topic;
       if(topic == null){
         throw new Exception("Topic not set in kafka message");
       }
+      
       return topic;
     }
 

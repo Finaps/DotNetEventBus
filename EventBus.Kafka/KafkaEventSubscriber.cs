@@ -59,7 +59,7 @@ namespace Finaps.EventBus.Kafka
           while (true)
           {
               var consumer = _consumer.Consume();
-              _logger.LogDebug($"Message: {consumer.Message.Value} received from {consumer.TopicPartitionOffset}");
+              _logger.LogInformation($"Message: {consumer.Message.Value} received from {consumer.TopicPartitionOffset}");
               await OnMessageReceived(consumer);
           }
         }
