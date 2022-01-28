@@ -26,6 +26,7 @@ namespace EventBus.SampleProject
       services.AddControllers(options => options.EnableEndpointRouting = false);
       services.AddTransient<MessagePostedEventHandler>();
       services.AddTransient<MessagePutEventHandler>();
+      services.AddTransient<KafkaMessagePostedEventHandler>();
       services.AddScoped<ScopedDependency>();
       EventBusConfiguration eventBusConfiguration = new EventBusConfiguration();
       Configuration.GetSection("EventBus").Bind(eventBusConfiguration);

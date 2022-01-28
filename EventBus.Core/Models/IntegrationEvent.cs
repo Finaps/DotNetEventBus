@@ -12,6 +12,6 @@ namespace Finaps.EventBus.Core.Models
     }
     public Guid Id { get; set; }
     public DateTime CreationDate { get; set; }
-    public string UserId { get; set; }
+    public string? UserId { get; set; }
   }
 }

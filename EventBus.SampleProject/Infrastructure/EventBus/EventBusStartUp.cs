@@ -53,6 +53,7 @@ namespace EventBus.SampleProject.Infrastructure.EventBus
     {
       config.AddSubscription<MessagePostedEvent, MessagePostedEventHandler>();
       config.AddSubscription<MessagePutEvent, MessagePutEventHandler>();
+      config.AddSubscription<KafkaMessagePostedEvent, KafkaMessagePostedEventHandler>();
     }
 
     public static IServiceCollection ConfigureKafka(this IServiceCollection services, IConfiguration configuration)
