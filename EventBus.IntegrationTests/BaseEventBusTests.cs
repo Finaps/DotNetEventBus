@@ -15,7 +15,7 @@ namespace Finaps.EventBus.IntegrationTests;
 [Collection("Sequential")]
 public class BaseEventBusTests : IDisposable
 {
-  private static readonly int ConsumeTimeoutInMilliSeconds = 8000;
+  private static readonly int ConsumeTimeoutInMilliSeconds = 15000;
   protected EventReceivedNotifier eventReceivedNotifier;
   protected IntegerIncrementer integerIncrementer;
   protected AutoResetEvent autoResetEvent;
