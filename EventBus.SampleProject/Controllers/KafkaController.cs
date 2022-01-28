@@ -16,30 +16,21 @@ namespace EventBus.SampleProject.Controllers
     }
 
     [HttpPost]
-    public async Task<ObjectResult> Post([FromBody] MessageModel value)
+    public async Task<ObjectResult> Post([FromBody] KafkaMessageModel value)
     {
 
-      await _eventBus.PublishAsync(new MessagePostedEvent()
+      await _eventBus.PublishAsync(new KafkaMessagePostedEvent()
       {
-        Message = value.Message
+        Message = value.Message,
+        Topic = value.Topic
       });
       return Ok("sent");
     }
 
-    [HttpPut]
-    public async Task<ObjectResult> Put([FromBody] MessageModel value)
-    {
-      await _eventBus.PublishAsync(new MessagePutEvent()
-      {
-        Message = value.Message
-      });
-
-      return Ok("sent");
-    }
-
-    public class MessageModel
+    public class KafkaMessageModel
     {
       public string Message { get; set; }
+      public string Topic { get; set; }
     }
 
   }

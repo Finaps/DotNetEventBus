@@ -1,10 +1,12 @@
 ﻿using Confluent.Kafka;
 using Finaps.EventBus.Core.Abstractions;
 using Finaps.EventBus.Kafka.Configuration;
+using Finaps.EventBus.Kafka.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 using System;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace EventBus.Kafka
@@ -25,20 +27,39 @@ namespace EventBus.Kafka
       _channelPool = CreateChannelPool();
     }
     
-
     public void Publish(string message, string eventName, string messageId)
     {
-      var channel = _channelPool.Get();
-      channel.Produce("test", CreateMessage(message, eventName));
+      string topic = GetTopicFromKafkaMessage(message);
+      IProducer<int, string> channel = _channelPool.Get();
+      channel.Produce(topic, CreateMessage(message, eventName));
       _channelPool.Return(channel);
     }
+
     public Task PublishAsync(string message, string eventName, string messageId)
     {
-      var channel = _channelPool.Get();
-      channel.ProduceAsync("test", CreateMessage(message, eventName));
+      string topic = GetTopicFromKafkaMessage(message);
+      IProducer<int, string> channel = _channelPool.Get();
+      channel.ProduceAsync(topic, CreateMessage(message, eventName));
       _channelPool.Return(channel);
       return Task.CompletedTask;
     }
+
+    public string GetTopicFromKafkaMessage(string message)
+    {
+      var kafkaMessage = JsonSerializer.Deserialize<KafkaMessageEvent>(message);
+      string topic;
+      if(kafkaMessage != null){
+        topic = kafkaMessage.Topic;
+      }
+      else{
+        throw new Exception("Invalid kafka message format");
+      }
+      if(topic == null){
+        throw new Exception("Topic not set in kafka message");
+      }
+      return topic;
+    }
+
     private Message<int, string> CreateMessage(string message, string eventName)
     {
       var headers = new Headers();
