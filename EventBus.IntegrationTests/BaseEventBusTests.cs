@@ -143,7 +143,13 @@ public class BaseEventBusTests : IDisposable
     Assert.True(eventReceived);
     var publishedGuids = publishedEvents.Select(@event => @event.Id);
     var consumedGuids = eventReceivedNotifier.Events.Select(@event => @event.Id);
+    Console.WriteLine("WWWW");
+    Console.WriteLine(publishedGuids.Count());
+    Console.WriteLine(consumedGuids.Count());
     Assert.Equal(publishedGuids, consumedGuids);
+    // Expected: SelectListIterator<SubscriptionTestEvent, Guid> [c1a3fe89-b556-4510-a347-ece91da9c7f2, 3c6b71d0-29fd-4d5b-b29b-eafcfc3be4bc, b1686cf0-6e75-48e7-827d-f0a9d40bc450, 22a9a896-7d34-40de-a446-0b34b6d38ad6, 48cc5337-8504-49ef-afca-45f96f64c230, ...]
+    // Actual:   SelectListIterator<IntegrationEvent, Guid> [c1a3fe89-b556-4510-a347-ece91da9c7f2, 3c6b71d0-29fd-4d5b-b29b-eafcfc3be4bc, b1686cf0-6e75-48e7-827d-f0a9d40bc450, 22a9a896-7d34-40de-a446-0b34b6d38ad6, 48cc5337-8504-49ef-afca-45f96f64c230, ...]
+
   }
 
   [Fact]
