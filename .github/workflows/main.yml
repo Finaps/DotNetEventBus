@@ -1,7 +1,6 @@
 name: DotnetEventBus
 
 on:
-  push:
   pull_request:
     branches:
       - main
