@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using EventBus.SampleProject.Events;
 using Finaps.EventBus.Core.Abstractions;
 using Microsoft.AspNetCore.Mvc;
@@ -44,7 +45,8 @@ namespace EventBus.SampleProject.Controllers
       await _eventBus.PublishAsync(new KafkaMessagePostedEvent()
       {
         Message = value.Message,
-        Topic = value.Topic
+        Topic = value.Topic,
+        Headers = value.Headers
       });
       return Ok("sent");
     }
@@ -58,6 +60,7 @@ namespace EventBus.SampleProject.Controllers
     {
       public string Message { get; set; }
       public string Topic { get; set; }
+      public Dictionary<string, string> Headers { get; set; }
     }
 
   }

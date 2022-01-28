@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Confluent.Kafka;
 using System.Text;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Finaps.EventBus.Kafka
 {
@@ -38,6 +39,7 @@ namespace Finaps.EventBus.Kafka
       ).Build();
 
       //TODO: Make sure all topics exist, error if trying to subscribe to topic thats not
+      _consumer.Subscribe(options.TopicNames);
     }
 
     public Task InitializeAsync()
@@ -76,11 +78,11 @@ namespace Finaps.EventBus.Kafka
 
     public async Task OnMessageReceived(ConsumeResult<Ignore, string> consumer)
     {
-      var bytes = consumer.Message.Headers[0].GetValueBytes();
+      byte[]? eventNameHeader = consumer.Message.Headers.Where(h => h.Key == "eventName").First().GetValueBytes();
 
       var integrationEventReceivedArgs = new IntegrationEventReceivedArgs()
       {
-        EventName = Encoding.UTF8.GetString(bytes, 0, bytes.Length),
+        EventName = Encoding.UTF8.GetString(eventNameHeader, 0, eventNameHeader.Length),
         Message = consumer.Message.Value
       };
 

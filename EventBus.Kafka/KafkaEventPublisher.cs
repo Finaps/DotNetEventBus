@@ -29,18 +29,46 @@ namespace EventBus.Kafka
     public void Publish(string message, string eventName, string messageId)
     {
       string topic = GetTopicFromKafkaMessage(message);
+      Headers? headers = GetHeadersFromKafkaMessage(message);
       IProducer<string, string> channel = _channelPool.Get();
-      channel.Produce(topic, CreateMessage(message, eventName, messageId));
+      channel.Produce(topic, CreateMessage(message, eventName, messageId, headers));
       _channelPool.Return(channel);
     }
 
     public Task PublishAsync(string message, string eventName, string messageId)
     {
       string topic = GetTopicFromKafkaMessage(message);
+      Headers? headers = GetHeadersFromKafkaMessage(message);
+
       IProducer<string, string> channel = _channelPool.Get();
-      channel.ProduceAsync(topic, CreateMessage(message, eventName, messageId));
+      channel.ProduceAsync(topic, CreateMessage(message, eventName, messageId, headers)).ContinueWith(t =>
+      {
+        if (t.IsFaulted)
+        {
+          _logger.LogError(t.Exception, $"Sending message to Azure Service bus failed.\nEvent Type: {eventName}\nReason: {t.Exception.Message}");
+        }
+      });
+
       _channelPool.Return(channel);
       return Task.CompletedTask;
+    }
+
+    public Headers? GetHeadersFromKafkaMessage(string message)
+    {
+      var kafkaMessage = JsonSerializer.Deserialize<KafkaMessageEvent>(message);
+      if(kafkaMessage == null){
+        throw new Exception("Invalid kafka message format");
+      }
+
+      var headers = new Headers();
+      if(kafkaMessage.Headers != null){
+        foreach (var kvp in kafkaMessage.Headers)
+        {
+          headers.Add(kvp.Key, Encoding.ASCII.GetBytes(kvp.Value));
+        }
+      }
+
+      return headers;
     }
 
     public string GetTopicFromKafkaMessage(string message)
@@ -58,12 +86,12 @@ namespace EventBus.Kafka
       return topic;
     }
 
-    private Message<string, string> CreateMessage(string message, string eventName, string messageId)
+    private Message<string, string> CreateMessage(string message, string eventName, string messageId, Headers? headers)
     {
-      var headers = new Headers();
-      headers.Add("eventName", Encoding.ASCII.GetBytes(eventName) );
+      var existingHeaders = headers ??= new Headers();
+      existingHeaders.Add("eventName", Encoding.ASCII.GetBytes(eventName) );
       var key = messageId ??= Guid.NewGuid().ToString();
-      return new Message<string, string> { Headers = headers, Key=key, Value = message };
+      return new Message<string, string> { Headers = existingHeaders, Key=key, Value = message };
     }
 
     private ObjectPool<IProducer<string, string>> CreateChannelPool()
