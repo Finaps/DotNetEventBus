@@ -16,9 +16,17 @@ jobs:
           - 15672:15672
           - 5672:5672
       kafka:
-        image: wurstmeister/kafka:${KAFKA_VERSION:-latest}
+        image: wurstmeister/kafka
         ports:
           - 9094:9094
+        env:
+          KAFKA_CREATE_TOPICS: "test:1:1:compact,test2:1:1:compact"
+          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+          KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://localhost:9094
+          KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+          KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+          KAFKA_BROKER_ID: 1
       zookeeper:
         image: wurstmeister/zookeeper
         ports:
