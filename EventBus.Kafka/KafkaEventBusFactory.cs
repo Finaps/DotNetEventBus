@@ -22,11 +22,6 @@ namespace Finaps.EventBus.Kafka
       var consumer = CreateSubscriber(options, loggerFactory);
       var logger = loggerFactory.CreateLogger<IEventBus>();
       var eventBus = new KafkaEventBus(publisher, consumer, subscriptionsManager, serviceProvider, logger);
-      foreach (var subscription in subscriptions)
-      {
-        eventBus.AddSubscription(subscription);
-      }
-
       return eventBus;
     }
 

@@ -38,7 +38,6 @@ namespace Finaps.EventBus.Kafka
       ).Build();
 
       //TODO: Make sure all topics exist, error if trying to subscribe to topic thats not
-      _consumer.Subscribe(options.TopicNames);
     }
 
     public Task InitializeAsync()

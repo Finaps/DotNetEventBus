@@ -4,11 +4,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
   </PropertyGroup>
-
-  <!-- <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.App" />
-  </ItemGroup> -->
-
+  
   <ItemGroup>
     <ProjectReference Include="../EventBus.Kafka/EventBus.Kafka.csproj"/>
     <ProjectReference Include="../EventBus.RabbitMQ/EventBus.RabbitMQ.csproj" />
