@@ -13,8 +13,16 @@ jobs:
       rabbitmq:
         image: rabbitmq:3-management-alpine
         ports: 
-        - 15672:15672
-        - 5672:5672
+          - 15672:15672
+          - 5672:5672
+      kafka:
+        image: wurstmeister/kafka:${KAFKA_VERSION:-latest}
+        ports:
+          - 9094:9094
+      zookeeper:
+        image: wurstmeister/zookeeper
+        ports:
+          - "2181:2181"
     steps:
       - name: checkout
         uses: actions/checkout@v1
