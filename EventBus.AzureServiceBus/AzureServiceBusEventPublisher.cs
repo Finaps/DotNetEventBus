@@ -25,7 +25,7 @@ namespace Finaps.EventBus.AzureServiceBus
       _logger.LogDebug($"Initialized Azure Service Bus Sender with topic name {options.TopicName}");
     }
 
-    public async Task PublishAsync(string body, string eventName, string messageId)
+    public Task PublishAsync(string body, string eventName, string messageId)
     {
       _logger.LogTrace($"Publishing message to Azure Service Bus.\nBody: {body}\nEvent Name: {eventName}\nMessage Id: {messageId}");
       if (body == null) throw new ArgumentNullException(nameof(body));
@@ -46,6 +46,8 @@ namespace Finaps.EventBus.AzureServiceBus
           _logger.LogError(t.Exception, $"Sending message to Azure Service bus failed.\nEvent Type: {eventName}\nReason: {t.Exception.Message}");
         }
       });
+
+      return Task.CompletedTask;
     }
 
     public async ValueTask DisposeAsync()

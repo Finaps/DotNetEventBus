@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Finaps.EventBus.Kafka.Configuration
 {
   public class KafkaOptions
