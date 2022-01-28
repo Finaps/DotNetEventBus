@@ -7,15 +7,15 @@ namespace EventBus.SampleProject.Controllers
 {
   [Route("api/[controller]")]
   [ApiController]
-  public class RabbitController : ControllerBase
+  public class SampleController : ControllerBase
   {
     private readonly IEventBus _eventBus;
-    public RabbitController(IEventBus eventBus)
+    public SampleController(IEventBus eventBus)
     {
       _eventBus = eventBus;
     }
 
-    [HttpPost]
+    [HttpPost("rabbit")]
     public async Task<ObjectResult> Post([FromBody] MessageModel value)
     {
 
@@ -26,7 +26,7 @@ namespace EventBus.SampleProject.Controllers
       return Ok("sent");
     }
 
-    [HttpPut]
+    [HttpPut("rabbit")]
     public async Task<ObjectResult> Put([FromBody] MessageModel value)
     {
       await _eventBus.PublishAsync(new MessagePutEvent()
@@ -37,9 +37,27 @@ namespace EventBus.SampleProject.Controllers
       return Ok("sent");
     }
 
+    [HttpPost("kafka")]
+    public async Task<ObjectResult> Post([FromBody] KafkaMessageModel value)
+    {
+
+      await _eventBus.PublishAsync(new KafkaMessagePostedEvent()
+      {
+        Message = value.Message,
+        Topic = value.Topic
+      });
+      return Ok("sent");
+    }
+
     public class MessageModel
     {
       public string Message { get; set; }
+    }
+
+    public class KafkaMessageModel
+    {
+      public string Message { get; set; }
+      public string Topic { get; set; }
     }
 
   }

@@ -15,7 +15,7 @@ namespace EventBus.Kafka
   {
     private readonly ILogger<KafkaEventPublisher> _logger;
     private KafkaOptions _options;
-    private ObjectPool<IProducer<int, string>> _channelPool;
+    private ObjectPool<IProducer<string, string>> _channelPool;
     internal KafkaEventPublisher(
       ILogger<KafkaEventPublisher> logger,
       KafkaOptions options
@@ -29,16 +29,16 @@ namespace EventBus.Kafka
     public void Publish(string message, string eventName, string messageId)
     {
       string topic = GetTopicFromKafkaMessage(message);
-      IProducer<int, string> channel = _channelPool.Get();
-      channel.Produce(topic, CreateMessage(message, eventName));
+      IProducer<string, string> channel = _channelPool.Get();
+      channel.Produce(topic, CreateMessage(message, eventName, messageId));
       _channelPool.Return(channel);
     }
 
     public Task PublishAsync(string message, string eventName, string messageId)
     {
       string topic = GetTopicFromKafkaMessage(message);
-      IProducer<int, string> channel = _channelPool.Get();
-      channel.ProduceAsync(topic, CreateMessage(message, eventName));
+      IProducer<string, string> channel = _channelPool.Get();
+      channel.ProduceAsync(topic, CreateMessage(message, eventName, messageId));
       _channelPool.Return(channel);
       return Task.CompletedTask;
     }
@@ -54,19 +54,19 @@ namespace EventBus.Kafka
       if(topic == null){
         throw new Exception("Topic not set in kafka message");
       }
-      
+
       return topic;
     }
 
-    private Message<int, string> CreateMessage(string message, string eventName)
+    private Message<string, string> CreateMessage(string message, string eventName, string messageId)
     {
       var headers = new Headers();
       headers.Add("eventName", Encoding.ASCII.GetBytes(eventName) );
-      var key = new Random().Next(9999);
-      return new Message<int, string> { Headers = headers, Key=key, Value = message };
+      var key = messageId ??= Guid.NewGuid().ToString();
+      return new Message<string, string> { Headers = headers, Key=key, Value = message };
     }
 
-    private ObjectPool<IProducer<int, string>> CreateChannelPool()
+    private ObjectPool<IProducer<string, string>> CreateChannelPool()
     {
       var channelPoolPolicy = new ChannelPoolPolicy(_options.Brokers ??= "");
       var channelPoolProvider = new DefaultObjectPoolProvider()
@@ -76,7 +76,7 @@ namespace EventBus.Kafka
       return channelPoolProvider.Create(channelPoolPolicy);
     }
 
-    private class ChannelPoolPolicy : PooledObjectPolicy<IProducer<int, string>>
+    private class ChannelPoolPolicy : PooledObjectPolicy<IProducer<string, string>>
     {
       private readonly ProducerConfig _producerConfig;
 
@@ -85,13 +85,13 @@ namespace EventBus.Kafka
         this._producerConfig = new ProducerConfig{ BootstrapServers = brokers };
       }
 
-      public override IProducer<int, string> Create()
+      public override IProducer<string, string> Create()
       {
-        var channel = new ProducerBuilder<int, string>(_producerConfig).Build();
+        var channel = new ProducerBuilder<string, string>(_producerConfig).Build();
         return channel;
       }
 
-      public override bool Return(IProducer<int, string> obj)
+      public override bool Return(IProducer<string, string> obj)
       {
         return obj != null;
       }
