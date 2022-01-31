@@ -3,11 +3,8 @@ using EventBus.IntegrationTests.Events;
 using Finaps.EventBus.Core.Abstractions;
 using Finaps.EventBus.Core.DependencyInjection;
 using Finaps.EventBus.IntegrationTests.Events;
-using Finaps.EventBus.RabbitMq.Configuration;
-using Finaps.EventBus.RabbitMq.Extensions;
 using Finaps.EventBus.Kafka.Configuration;
 using Finaps.EventBus.Kafka.Extensions;
-using Finaps.EventBus.AzureServiceBus.Extensions;
 using Xunit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -25,7 +22,6 @@ public class KafaEventBusTests : IDisposable
   protected IEventBus eventBus;
   public KafaEventBusTests()
   {
-    var eventBusType = EventBusType.Kafka;
     eventReceivedNotifier = new EventReceivedNotifier();
     integerIncrementer = new IntegerIncrementer();
     autoResetEvent = new AutoResetEvent(false);
@@ -34,7 +30,7 @@ public class KafaEventBusTests : IDisposable
       autoResetEvent.Set();
     };
     var services = SetupServices();
-    eventBus = SetupEventBus(services, eventBusType);
+    eventBus = SetupEventBus(services);
   }
 
   private ServiceCollection SetupServices()
@@ -51,47 +47,18 @@ public class KafaEventBusTests : IDisposable
     return services;
   }
 
-  private static IEventBus SetupEventBus(ServiceCollection services, EventBusType eventBusType)
+  private static IEventBus SetupEventBus(ServiceCollection services)
   {
-    switch (eventBusType)
+    services.ConfigureKafka(config =>
     {
-      case EventBusType.RabbitMQ:
-        services.ConfigureRabbitMq(config =>
-        {
-          config.Options = new RabbitMqOptions
-          {
-            ExchangeName = "SampleProject",
-            QueueName = "SampleProject",
-            UserName = "guest",
-            Password = "guest",
-            VirtualHost = "/"
-          };
-          SetupSubscriptions(config);
-        });
-        break;
-      case EventBusType.Kafka:
-        services.ConfigureKafka(config =>
-        {
-          config.Options = new KafkaOptions
-          {
-            Brokers = "localhost:9094",
-            TopicNames = new string[] { "test","test2" },
-            GroupId = "test_group"
-          };
-          SetupSubscriptions(config);
-        });
-        break;
-      case EventBusType.Azure:
-        services.ConfigureAzureServiceBus(config =>
-        {
-          config.Options.ConnectionString = "Endpoint=sb://finaps-bus.servicebus.windows.net/;SharedAccessKeyName=IntegrationTest;SharedAccessKey=x55a0K04JdGS+5/uFNTw99raxFFUY5T7iq2UFBbZbBg=;EntityPath=test";
-          config.Options.SubscriptionName = "IntegrationTest";
-          config.Options.TopicName = "topic";
-          SetupSubscriptions(config);
-        });
-        break;
-    }
-
+      config.Options = new KafkaOptions
+      {
+        Brokers = "localhost:9094",
+        TopicNames = new string[] { "test","test2" },
+        GroupId = "test_group"
+      };
+      SetupSubscriptions(config);
+    });
 
     var serviceProvider = new DefaultServiceProviderFactory().CreateServiceProvider(services);
     var backgroundConsumer = serviceProvider.GetRequiredService<EventBusStartup>();
@@ -136,39 +103,33 @@ public class KafaEventBusTests : IDisposable
     Assert.Equal(kafkaTestEvent.CreationDate, consumedEvent.CreationDate);
   }
 
-  // [Fact]
-  // public void CanPublishWhileReceiving()
-  // {
-  //   var eventPublisherEvent = new EventPublisherEvent();
-  //   eventBus.PublishAsync(eventPublisherEvent);
-  //   var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
-  //   Assert.True(eventReceived);
-  //   Assert.NotEmpty(eventReceivedNotifier.Events);
-  // }
+  [Fact]
+  public void CanPublishWhileReceiving()
+  {
+    var eventPublisherEvent = PublishKafkaTestEvent();
+    var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
+    Assert.True(eventReceived);
+    Assert.NotEmpty(eventReceivedNotifier.Events);
+  }
 
-  // [Fact]
-  // public void EventsAreReceivedInOrder()
-  // {
-  //   var publishedEvents = new List<SubscriptionTestEvent>();
-  //   for (int i = 0; i < 50; i++)
-  //   {
-  //     publishedEvents.Add(PublishSubscriptionTestEvent());
-  //   }
-  //   var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
-  //   Assert.True(eventReceived);
-  //   var publishedGuids = publishedEvents.Select(@event => @event.Id);
-  //   var consumedGuids = eventReceivedNotifier.Events.Select(@event => @event.Id);
-  //   Assert.Equal(publishedGuids, consumedGuids);
-  // }
+  [Fact]
+  public void EventsAreReceivedInOrder()
+  {
+    var publishedEvents = new List<KafkaTestEvent>();
+    for (int i = 0; i < 50; i++)
+    {
+      publishedEvents.Add(PublishKafkaTestEvent());
+    }
+    var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
+    Assert.True(eventReceived);
+    var publishedGuids = publishedEvents.Select(@event => @event.Id);
+    var consumedGuids = eventReceivedNotifier.Events.Select(@event => @event.Id);
+    Assert.Equal(publishedGuids, consumedGuids);
+  }
 
-  // [Fact]
-  // public async Task EventsAreHandledSequentially()
-  // {
-  //   for (int i = 0; i < 10; i++)
-  //   {
-  //     await eventBus.PublishAsync(new CheckConcurrencyEvent());
-  //   }
-  //   await Task.Delay(4000);
-  //   Assert.Equal(10, integerIncrementer.TimesIncremented);
-  // }
+  [Fact]
+  public async Task IncorrectMessageFormatThrowsError()
+  {
+    await Assert.ThrowsAsync<Exception>(async () => await eventBus.PublishAsync(new CheckConcurrencyEvent()));
+  }
 }
