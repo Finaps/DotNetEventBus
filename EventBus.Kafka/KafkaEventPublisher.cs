@@ -79,9 +79,9 @@ namespace EventBus.Kafka
     {
       var existingHeaders = headers ??= new Headers();
       if (_options.EventHeader != null)
-        existingHeaders.Add("eventName", Encoding.ASCII.GetBytes(eventName) );
-      else
         existingHeaders.Add(_options.EventHeader, Encoding.ASCII.GetBytes(eventName) );
+      else
+        existingHeaders.Add("eventName", Encoding.ASCII.GetBytes(eventName) );
 
       var key = messageId ??= Guid.NewGuid().ToString();
       return new Message<string, string> { Headers = existingHeaders, Key=key, Value = message };
