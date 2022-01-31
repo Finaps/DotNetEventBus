@@ -16,16 +16,16 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Finaps.EventBus.IntegrationTests;
 
 [Collection("Sequential")]
-public class BaseEventBusTests : IDisposable
+public class KafaEventBusTests : IDisposable
 {
   private static readonly int ConsumeTimeoutInMilliSeconds = 15000;
   protected EventReceivedNotifier eventReceivedNotifier;
   protected IntegerIncrementer integerIncrementer;
   protected AutoResetEvent autoResetEvent;
   protected IEventBus eventBus;
-  public BaseEventBusTests()
+  public KafaEventBusTests()
   {
-    var eventBusType = EventBusType.RabbitMQ;
+    var eventBusType = EventBusType.Kafka;
     eventReceivedNotifier = new EventReceivedNotifier();
     integerIncrementer = new IntegerIncrementer();
     autoResetEvent = new AutoResetEvent(false);
@@ -44,7 +44,7 @@ public class BaseEventBusTests : IDisposable
     services.AddSingleton<IntegerIncrementer>(integerIncrementer);
     services.AddSingleton<EventBusStartup>();
     services.AddScoped<EventPublisherEventHandler>();
-    services.AddScoped<SubscriptionTestEventHandler>();
+    services.AddScoped<KafkaTestEventHandler>();
     services.AddScoped<CheckConcurrencyEventHandler>();
     services.AddSingleton<ILoggerFactory>(new NullLoggerFactory());
     services.AddLogging();
@@ -103,18 +103,19 @@ public class BaseEventBusTests : IDisposable
   protected static void SetupSubscriptions(BaseEventBusConfiguration config)
   {
     config.AddSubscription<EventPublisherEvent, EventPublisherEventHandler>();
-    config.AddSubscription<SubscriptionTestEvent, SubscriptionTestEventHandler>();
+    config.AddSubscription<KafkaTestEvent, KafkaTestEventHandler>();
     config.AddSubscription<CheckConcurrencyEvent, CheckConcurrencyEventHandler>();
   }
 
-  protected SubscriptionTestEvent PublishSubscriptionTestEvent()
+  protected KafkaTestEvent PublishKafkaTestEvent()
   {
-    var subscriptionTestEvent = new SubscriptionTestEvent()
+    var kafkaTestEvent = new KafkaTestEvent()
     {
-      TestString = "test"
+      Message = "testMessage",
+      Topic = "test",
     };
-    eventBus.PublishAsync(subscriptionTestEvent);
-    return subscriptionTestEvent;
+    eventBus.PublishAsync(kafkaTestEvent);
+    return kafkaTestEvent;
   }
 
   public void Dispose()
@@ -126,49 +127,48 @@ public class BaseEventBusTests : IDisposable
   [Fact]
   public void ListensCorrectly()
   {
-    var subscriptionTestEvent = PublishSubscriptionTestEvent();
+    var kafkaTestEvent = PublishKafkaTestEvent();
     var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
     Assert.True(eventReceived);
-    var consumedEvent = eventReceivedNotifier.Events.Single() as SubscriptionTestEvent;
-    Assert.Equal(subscriptionTestEvent.TestString, consumedEvent.TestString);
-    Assert.Equal(subscriptionTestEvent.Id, consumedEvent.Id);
-    Assert.Equal(subscriptionTestEvent.CreationDate, consumedEvent.CreationDate);
-
+    var consumedEvent = eventReceivedNotifier.Events.Single() as KafkaTestEvent;
+    Assert.Equal(kafkaTestEvent.Message, consumedEvent.Message);
+    Assert.Equal(kafkaTestEvent.Id, consumedEvent.Id);
+    Assert.Equal(kafkaTestEvent.CreationDate, consumedEvent.CreationDate);
   }
 
-  [Fact]
-  public void CanPublishWhileReceiving()
-  {
-    var eventPublisherEvent = new EventPublisherEvent();
-    eventBus.PublishAsync(eventPublisherEvent);
-    var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
-    Assert.True(eventReceived);
-    Assert.NotEmpty(eventReceivedNotifier.Events);
-  }
+  // [Fact]
+  // public void CanPublishWhileReceiving()
+  // {
+  //   var eventPublisherEvent = new EventPublisherEvent();
+  //   eventBus.PublishAsync(eventPublisherEvent);
+  //   var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
+  //   Assert.True(eventReceived);
+  //   Assert.NotEmpty(eventReceivedNotifier.Events);
+  // }
 
-  [Fact]
-  public void EventsAreReceivedInOrder()
-  {
-    var publishedEvents = new List<SubscriptionTestEvent>();
-    for (int i = 0; i < 50; i++)
-    {
-      publishedEvents.Add(PublishSubscriptionTestEvent());
-    }
-    var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
-    Assert.True(eventReceived);
-    var publishedGuids = publishedEvents.Select(@event => @event.Id);
-    var consumedGuids = eventReceivedNotifier.Events.Select(@event => @event.Id);
-    Assert.Equal(publishedGuids, consumedGuids);
-  }
+  // [Fact]
+  // public void EventsAreReceivedInOrder()
+  // {
+  //   var publishedEvents = new List<SubscriptionTestEvent>();
+  //   for (int i = 0; i < 50; i++)
+  //   {
+  //     publishedEvents.Add(PublishSubscriptionTestEvent());
+  //   }
+  //   var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
+  //   Assert.True(eventReceived);
+  //   var publishedGuids = publishedEvents.Select(@event => @event.Id);
+  //   var consumedGuids = eventReceivedNotifier.Events.Select(@event => @event.Id);
+  //   Assert.Equal(publishedGuids, consumedGuids);
+  // }
 
-  [Fact]
-  public async Task EventsAreHandledSequentially()
-  {
-    for (int i = 0; i < 10; i++)
-    {
-      await eventBus.PublishAsync(new CheckConcurrencyEvent());
-    }
-    await Task.Delay(4000);
-    Assert.Equal(10, integerIncrementer.TimesIncremented);
-  }
+  // [Fact]
+  // public async Task EventsAreHandledSequentially()
+  // {
+  //   for (int i = 0; i < 10; i++)
+  //   {
+  //     await eventBus.PublishAsync(new CheckConcurrencyEvent());
+  //   }
+  //   await Task.Delay(4000);
+  //   Assert.Equal(10, integerIncrementer.TimesIncremented);
+  // }
 }

@@ -28,8 +28,8 @@ namespace EventBus.Kafka
     
     public void Publish(string message, string eventName, string messageId)
     {
-      string topic = GetTopicFromKafkaMessage(message);
-      Headers? headers = GetHeadersFromKafkaMessage(message);
+      (Headers headers, string topic) = GetHeadersAndTopicFromKafkaMessage(message);
+
       IProducer<string, string> channel = _channelPool.Get();
       channel.Produce(topic, CreateMessage(message, eventName, messageId, headers));
       _channelPool.Return(channel);
@@ -37,8 +37,7 @@ namespace EventBus.Kafka
 
     public Task PublishAsync(string message, string eventName, string messageId)
     {
-      string topic = GetTopicFromKafkaMessage(message);
-      Headers? headers = GetHeadersFromKafkaMessage(message);
+      (Headers headers, string topic) = GetHeadersAndTopicFromKafkaMessage(message);
 
       IProducer<string, string> channel = _channelPool.Get();
       channel.ProduceAsync(topic, CreateMessage(message, eventName, messageId, headers)).ContinueWith(t =>
@@ -53,7 +52,7 @@ namespace EventBus.Kafka
       return Task.CompletedTask;
     }
 
-    public Headers? GetHeadersFromKafkaMessage(string message)
+    public (Headers headers, string topic) GetHeadersAndTopicFromKafkaMessage(string message)
     {
       var kafkaMessage = JsonSerializer.Deserialize<KafkaMessageEvent>(message);
       if(kafkaMessage == null){
@@ -68,28 +67,22 @@ namespace EventBus.Kafka
         }
       }
 
-      return headers;
-    }
-
-    public string GetTopicFromKafkaMessage(string message)
-    {
-      var kafkaMessage = JsonSerializer.Deserialize<KafkaMessageEvent>(message);
-      if(kafkaMessage == null){
-        throw new Exception("Invalid kafka message format");
-      }
-
       string? topic = kafkaMessage.Topic;
       if(topic == null){
         throw new Exception("Topic not set in kafka message");
       }
 
-      return topic;
+      return (headers, topic);
     }
 
     private Message<string, string> CreateMessage(string message, string eventName, string messageId, Headers? headers)
     {
       var existingHeaders = headers ??= new Headers();
-      existingHeaders.Add("eventName", Encoding.ASCII.GetBytes(eventName) );
+      if (_options.EventHeader != null)
+        existingHeaders.Add("eventName", Encoding.ASCII.GetBytes(eventName) );
+      else
+        existingHeaders.Add(_options.EventHeader, Encoding.ASCII.GetBytes(eventName) );
+
       var key = messageId ??= Guid.NewGuid().ToString();
       return new Message<string, string> { Headers = existingHeaders, Key=key, Value = message };
     }

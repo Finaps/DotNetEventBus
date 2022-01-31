@@ -8,7 +8,6 @@ using Finaps.EventBus.Core.Utilities;
 using Microsoft.Extensions.Logging;
 using Confluent.Kafka;
 using System.Text;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Finaps.EventBus.Kafka
@@ -78,7 +77,11 @@ namespace Finaps.EventBus.Kafka
 
     public async Task OnMessageReceived(ConsumeResult<Ignore, string> consumer)
     {
-      byte[]? eventNameHeader = consumer.Message.Headers.Where(h => h.Key == "eventName").First().GetValueBytes();
+      byte[]? eventNameHeader;
+      if (_options.EventHeader != null)
+        eventNameHeader = consumer.Message.Headers.Where(h => h.Key == _options.EventHeader).First().GetValueBytes();
+      else
+        eventNameHeader = consumer.Message.Headers.Where(h => h.Key == "eventName").First().GetValueBytes();
 
       var integrationEventReceivedArgs = new IntegrationEventReceivedArgs()
       {
@@ -87,9 +90,7 @@ namespace Finaps.EventBus.Kafka
       };
 
       if (OnEventReceived != null){
-        await Task.Run(async () => {
-          await OnEventReceived.Invoke(this, integrationEventReceivedArgs);
-        });
+        await OnEventReceived.Invoke(this, integrationEventReceivedArgs);
       }
     }
 
