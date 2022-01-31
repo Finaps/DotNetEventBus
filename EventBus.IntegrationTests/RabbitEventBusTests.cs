@@ -5,9 +5,6 @@ using Finaps.EventBus.Core.DependencyInjection;
 using Finaps.EventBus.IntegrationTests.Events;
 using Finaps.EventBus.RabbitMq.Configuration;
 using Finaps.EventBus.RabbitMq.Extensions;
-using Finaps.EventBus.Kafka.Configuration;
-using Finaps.EventBus.Kafka.Extensions;
-using Finaps.EventBus.AzureServiceBus.Extensions;
 using Xunit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -25,7 +22,6 @@ public class BaseEventBusTests : IDisposable
   protected IEventBus eventBus;
   public BaseEventBusTests()
   {
-    var eventBusType = EventBusType.RabbitMQ;
     eventReceivedNotifier = new EventReceivedNotifier();
     integerIncrementer = new IntegerIncrementer();
     autoResetEvent = new AutoResetEvent(false);
@@ -34,7 +30,7 @@ public class BaseEventBusTests : IDisposable
       autoResetEvent.Set();
     };
     var services = SetupServices();
-    eventBus = SetupEventBus(services, eventBusType);
+    eventBus = SetupEventBus(services);
   }
 
   private ServiceCollection SetupServices()
@@ -51,47 +47,20 @@ public class BaseEventBusTests : IDisposable
     return services;
   }
 
-  private static IEventBus SetupEventBus(ServiceCollection services, EventBusType eventBusType)
+  private static IEventBus SetupEventBus(ServiceCollection services)
   {
-    switch (eventBusType)
+    services.ConfigureRabbitMq(config =>
     {
-      case EventBusType.RabbitMQ:
-        services.ConfigureRabbitMq(config =>
-        {
-          config.Options = new RabbitMqOptions
-          {
-            ExchangeName = "SampleProject",
-            QueueName = "SampleProject",
-            UserName = "guest",
-            Password = "guest",
-            VirtualHost = "/"
-          };
-          SetupSubscriptions(config);
-        });
-        break;
-      case EventBusType.Kafka:
-        services.ConfigureKafka(config =>
-        {
-          config.Options = new KafkaOptions
-          {
-            Brokers = "localhost:9094",
-            TopicNames = new string[] { "test","test2" },
-            GroupId = "test_group"
-          };
-          SetupSubscriptions(config);
-        });
-        break;
-      case EventBusType.Azure:
-        services.ConfigureAzureServiceBus(config =>
-        {
-          config.Options.ConnectionString = "Endpoint=sb://finaps-bus.servicebus.windows.net/;SharedAccessKeyName=IntegrationTest;SharedAccessKey=x55a0K04JdGS+5/uFNTw99raxFFUY5T7iq2UFBbZbBg=;EntityPath=test";
-          config.Options.SubscriptionName = "IntegrationTest";
-          config.Options.TopicName = "topic";
-          SetupSubscriptions(config);
-        });
-        break;
-    }
-
+      config.Options = new RabbitMqOptions
+      {
+        ExchangeName = "SampleProject",
+        QueueName = "SampleProject",
+        UserName = "guest",
+        Password = "guest",
+        VirtualHost = "/"
+      };
+      SetupSubscriptions(config);
+    });
 
     var serviceProvider = new DefaultServiceProviderFactory().CreateServiceProvider(services);
     var backgroundConsumer = serviceProvider.GetRequiredService<EventBusStartup>();
