@@ -13,12 +13,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Finaps.EventBus.IntegrationTests;
 
 [Collection("Sequential")]
+[CollectionDefinition("Non-Parallel Collection", DisableParallelization = true)]
 public class KafaEventBusTests : IDisposable
 {
   private static readonly int ConsumeTimeoutInMilliSeconds = 15000;
   protected EventReceivedNotifier eventReceivedNotifier;
   protected IntegerIncrementer integerIncrementer;
   protected AutoResetEvent autoResetEvent;
+  protected ServiceProvider serviceProvider;
   protected IEventBus eventBus;
   public KafaEventBusTests()
   {
@@ -39,15 +41,13 @@ public class KafaEventBusTests : IDisposable
     services.AddSingleton<EventReceivedNotifier>(eventReceivedNotifier);
     services.AddSingleton<IntegerIncrementer>(integerIncrementer);
     services.AddSingleton<EventBusStartup>();
-    services.AddScoped<EventPublisherEventHandler>();
     services.AddScoped<KafkaTestEventHandler>();
-    services.AddScoped<CheckConcurrencyEventHandler>();
     services.AddSingleton<ILoggerFactory>(new NullLoggerFactory());
     services.AddLogging();
     return services;
   }
 
-  private static IEventBus SetupEventBus(ServiceCollection services)
+  private IEventBus SetupEventBus(ServiceCollection services)
   {
     services.ConfigureKafka(config =>
     {
@@ -60,7 +60,7 @@ public class KafaEventBusTests : IDisposable
       SetupSubscriptions(config);
     });
 
-    var serviceProvider = new DefaultServiceProviderFactory().CreateServiceProvider(services);
+    this.serviceProvider = services.BuildServiceProvider();
     var backgroundConsumer = serviceProvider.GetRequiredService<EventBusStartup>();
     Task.Run(() => backgroundConsumer.StartAsync(CancellationToken.None)).Wait();
     var eventBus = serviceProvider.GetRequiredService<IEventBus>();
@@ -69,9 +69,7 @@ public class KafaEventBusTests : IDisposable
 
   protected static void SetupSubscriptions(BaseEventBusConfiguration config)
   {
-    config.AddSubscription<EventPublisherEvent, EventPublisherEventHandler>();
     config.AddSubscription<KafkaTestEvent, KafkaTestEventHandler>();
-    config.AddSubscription<CheckConcurrencyEvent, CheckConcurrencyEventHandler>();
   }
 
   protected KafkaTestEvent PublishKafkaTestEvent()
@@ -89,6 +87,7 @@ public class KafaEventBusTests : IDisposable
   {
     autoResetEvent.Dispose();
     eventBus.DisposeAsync();
+    serviceProvider.Dispose();
   }
 
   [Fact]
@@ -104,24 +103,22 @@ public class KafaEventBusTests : IDisposable
   }
 
   [Fact]
-  public void CanPublishWhileReceiving()
+  public async void CanPublishWhileReceiving()
   {
     var eventPublisherEvent = PublishKafkaTestEvent();
-    var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
-    Assert.True(eventReceived);
+    await Task.Delay(4000);
     Assert.NotEmpty(eventReceivedNotifier.Events);
   }
 
   [Fact]
-  public void EventsAreReceivedInOrder()
+  public async void EventsAreReceivedInOrder()
   {
     var publishedEvents = new List<KafkaTestEvent>();
     for (int i = 0; i < 50; i++)
     {
       publishedEvents.Add(PublishKafkaTestEvent());
     }
-    var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
-    Assert.True(eventReceived);
+    await Task.Delay(4000);
     var publishedGuids = publishedEvents.Select(@event => @event.Id);
     var consumedGuids = eventReceivedNotifier.Events.Select(@event => @event.Id);
     Assert.Equal(publishedGuids, consumedGuids);
@@ -130,6 +127,12 @@ public class KafaEventBusTests : IDisposable
   [Fact]
   public async Task IncorrectMessageFormatThrowsError()
   {
-    await Assert.ThrowsAsync<Exception>(async () => await eventBus.PublishAsync(new CheckConcurrencyEvent()));
+    var kafkaTestEvent = new KafkaTestEvent()
+    {
+      Message = "testMessage",
+      Topic = null,
+    };
+
+    await Assert.ThrowsAsync<Exception>(async () => await eventBus.PublishAsync(kafkaTestEvent));
   }
 }

@@ -11,6 +11,7 @@ public class EventReceivedNotifier
     {
       Event = integrationEvent
     };
+    // Console.WriteLine(Events.Count());
     OnEventReceived?.Invoke(this, eventArgs);
   }
 

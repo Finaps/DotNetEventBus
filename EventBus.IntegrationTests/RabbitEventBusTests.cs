@@ -13,14 +13,15 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Finaps.EventBus.IntegrationTests;
 
 [Collection("Sequential")]
-public class BaseEventBusTests : IDisposable
+[CollectionDefinition("Non-Parallel Collection", DisableParallelization = true)]
+public class RabbitEventBusTests : IDisposable
 {
   private static readonly int ConsumeTimeoutInMilliSeconds = 15000;
   protected EventReceivedNotifier eventReceivedNotifier;
   protected IntegerIncrementer integerIncrementer;
   protected AutoResetEvent autoResetEvent;
   protected IEventBus eventBus;
-  public BaseEventBusTests()
+  public RabbitEventBusTests()
   {
     eventReceivedNotifier = new EventReceivedNotifier();
     integerIncrementer = new IntegerIncrementer();
@@ -116,17 +117,17 @@ public class BaseEventBusTests : IDisposable
   }
 
   [Fact]
-  public void EventsAreReceivedInOrder()
+  public async void EventsAreReceivedInOrder()
   {
     var publishedEvents = new List<SubscriptionTestEvent>();
-    for (int i = 0; i < 50; i++)
+    for (int i = 0; i < 20; i++)
     {
       publishedEvents.Add(PublishSubscriptionTestEvent());
     }
-    var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
-    Assert.True(eventReceived);
+    await Task.Delay(4000);
     var publishedGuids = publishedEvents.Select(@event => @event.Id);
     var consumedGuids = eventReceivedNotifier.Events.Select(@event => @event.Id);
+    Assert.Equal(publishedGuids.Count(), consumedGuids.Count());
     Assert.Equal(publishedGuids, consumedGuids);
   }
 
