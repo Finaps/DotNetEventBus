@@ -94,11 +94,10 @@ public class RabbitEventBusTests : IDisposable
   }
 
   [Fact]
-  public void ListensCorrectly()
+  public async void ListensCorrectly()
   {
     var subscriptionTestEvent = PublishSubscriptionTestEvent();
-    var eventReceived = autoResetEvent.WaitOne(ConsumeTimeoutInMilliSeconds);
-    Assert.True(eventReceived);
+    await Task.Delay(4000);
     var consumedEvent = eventReceivedNotifier.Events.Single() as SubscriptionTestEvent;
     Assert.Equal(subscriptionTestEvent.TestString, consumedEvent.TestString);
     Assert.Equal(subscriptionTestEvent.Id, consumedEvent.Id);
