@@ -75,7 +75,7 @@ namespace EventBus.Kafka
       return (headers, topic);
     }
 
-    private Message<string, string> CreateMessage(string message, string eventName, string messageId, Headers? headers)
+    private Message<string, string> CreateMessage(string message, string eventName, string? messageId, Headers? headers)
     {
       var existingHeaders = headers ??= new Headers();
       if (String.IsNullOrWhiteSpace(_options.EventHeader))
